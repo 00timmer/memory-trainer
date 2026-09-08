@@ -1,0 +1,72 @@
+/* ===== MT2 三系统重构样式 ===== */
+.mt-page { padding: 0 0 40px; }
+.mt-card { background:#232733; border-radius:14px; padding:14px; margin:12px 10px; }
+.mt-card-h { font-size:15px; font-weight:600; margin-bottom:10px; }
+.mt-card-h .mt-sub { font-size:12px; color:#8a90a0; font-weight:400; margin-left:6px; }
+.mt-pending { opacity:.72; }
+.mt-empty { font-size:13px; color:#9aa0b0; line-height:1.7; }
+.mt-note { font-size:11.5px; color:#7a808f; line-height:1.6; margin-top:6px; }
+.mt-warn { background:#3a2a22; border-left:3px solid #f0883e; padding:9px 11px; border-radius:6px;
+           font-size:12.5px; color:#e8c0a0; margin-top:10px; line-height:1.6; }
+.mt-good { background:#22321f; border-left:3px solid #3ddc84; padding:9px 11px; border-radius:6px;
+           font-size:12.5px; color:#a8d8b0; margin-top:10px; }
+.mt-kpis { display:flex; gap:8px; margin-bottom:8px; }
+.mt-kpi { flex:1; background:#1b1f28; border-radius:9px; padding:9px 4px; text-align:center; }
+.mt-kpi .v { font-size:17px; font-weight:600; }
+.mt-kpi .l { font-size:10.5px; color:#8a90a0; margin-top:3px; }
+.mt-statusbar { display:flex; height:9px; border-radius:5px; overflow:hidden; background:#1b1f28; margin:10px 0 7px; }
+.mt-statusseg { height:100%; }
+.mt-legend, .mt-maplegend { display:flex; flex-wrap:wrap; gap:10px; font-size:11px; color:#9aa0b0; }
+.mt-legend i, .mt-maplegend i { display:inline-block; width:9px; height:9px; border-radius:2px; margin-right:4px; vertical-align:-1px; }
+.mt-trend { margin-top:12px; overflow-x:auto; }
+.mt-trend table { width:100%; border-collapse:collapse; font-size:12px; }
+.mt-trend th { color:#8a90a0; font-weight:500; text-align:right; padding:5px 6px; border-bottom:1px solid #2e3340; }
+.mt-trend th:first-child, .mt-trend td:first-child { text-align:left; }
+.mt-trend td { text-align:right; padding:5px 6px; border-bottom:1px solid #22262f; }
+.mt-btn { background:#2f3545; color:#dfe3ea; border:none; border-radius:9px; padding:9px 14px;
+          font-size:13px; cursor:pointer; margin-top:10px; }
+.mt-btn.danger { background:#4a2b2b; color:#f0b0b0; }
+.mt-databtns { display:flex; gap:8px; flex-wrap:wrap; }
+.mt-databtns .mt-btn { margin-top:0; }
+.mt-setting { display:flex; justify-content:space-between; align-items:center; font-size:13px;
+              padding:9px 0; border-bottom:1px solid #2a2f3a; }
+.mt-setting select { background:#1b1f28; color:#dfe3ea; border:1px solid #333a48; border-radius:7px; padding:5px 8px; font-size:13px; }
+.mt-oldstats .stats-row { font-size:12px; }
+/* 自动化地图 */
+.mt-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(50px,1fr)); gap:5px; margin:12px 10px; }
+.mt-cell { aspect-ratio:1; border-radius:7px; display:flex; flex-direction:column;
+           align-items:center; justify-content:center; cursor:pointer; position:relative; }
+.mt-cell .c { font-size:14px; font-weight:600; color:#12151c; }
+.mt-cell .m { font-size:10px; position:absolute; top:2px; right:4px; }
+.mt-maplegend { margin:12px 10px 0; }
+.mt-detail { background:#232733; border-radius:14px; padding:14px; margin:12px 10px; min-height:40px; }
+.mt-detail h3 { font-size:16px; margin:0 0 10px; }
+.mt-detrow { font-size:12.5px; color:#c3c8d4; line-height:1.7; padding:7px 0; border-top:1px solid #2a2f3a; }
+.mt-tags { margin:4px 0 6px; display:flex; flex-wrap:wrap; gap:6px; }
+.mt-tag { font-size:11px; background:#2f3545; border-radius:5px; padding:3px 7px; color:#b8bec9; }
+.mt-tag.bad { background:#4a2b2b; color:#f0b0b0; }
+.mt-tag.slow { background:#463321; color:#f0c89a; }
+.mt-spark { font-size:11px; color:#8a90a0; margin-bottom:6px; }
+.mt-spark i { display:inline-block; width:10px; height:10px; border-radius:2px; margin-left:3px; vertical-align:-1px; }
+/* 训练屏新增 */
+.mt-calib { display:flex; flex-wrap:wrap; gap:8px; padding:0 14px 10px; }
+.mt-calib-title { width:100%; font-size:12.5px; color:#8a90a0; margin-bottom:2px; }
+.mt-calib-opt { flex:1 1 45%; background:#2f3545; color:#dfe3ea; border:2px solid transparent;
+                border-radius:10px; padding:13px 8px; font-size:15px; cursor:pointer; }
+.mt-calib-opt.ok { border-color:#3ddc84; background:#22321f; }
+.mt-calib-opt.bad { border-color:#f0574a; background:#3a2222; }
+.mt-multimiss { padding:0 14px 10px; display:flex; flex-wrap:wrap; gap:8px; }
+.mt-miss-chip { background:#2f3545; color:#dfe3ea; border:2px solid transparent; border-radius:9px;
+                padding:9px 12px; font-size:13px; cursor:pointer; }
+.mt-miss-chip.on { border-color:#f0574a; background:#3a2222; }
+.mt-miss-done { width:100%; background:#2f3545; color:#dfe3ea; border:none; border-radius:9px; padding:10px; font-size:13px; cursor:pointer; }
+/* 首页今日训练 */
+.mt-today { margin:12px 10px; background:linear-gradient(135deg,#2a4a7a,#1f3b63); border-radius:16px; padding:16px; cursor:pointer; }
+.mt-today .t { font-size:19px; font-weight:700; }
+.mt-today .d { font-size:12.5px; color:#b8cbe8; margin-top:5px; line-height:1.6; }
+.mt-today-lens { display:flex; gap:7px; margin-top:12px; }
+.mt-today-lens button { flex:1; background:rgba(255,255,255,.12); color:#eaf1fb; border:none;
+                        border-radius:9px; padding:9px 4px; font-size:12.5px; cursor:pointer; }
+.mt-today-lens button.on { background:rgba(255,255,255,.30); font-weight:600; }
+.mt-fold { margin:0 10px 10px; }
+.mt-fold-h { font-size:13px; color:#8a90a0; padding:9px 2px; cursor:pointer; user-select:none; }

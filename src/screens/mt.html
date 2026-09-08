@@ -1,0 +1,43 @@
+<div class="mt-page" id="screen-mt-dash" style="display:none">
+  <div class="training-header">
+    <button class="back-btn" onclick="showHome()">← 返回</button>
+    <div class="progress">训练数据</div>
+    <div class="timer" style="visibility:hidden">-</div>
+  </div>
+  <div id="mt-dash-body"></div>
+  <div class="mt-card">
+    <div class="mt-card-h">数据备份 <span class="mt-sub">localStorage 不跨设备，定期导出</span></div>
+    <div class="mt-databtns">
+      <button class="mt-btn" onclick="MT2.exportData()">导出 JSON</button>
+      <button class="mt-btn" onclick="document.getElementById('mt-import-file').click()">导入合并</button>
+      <button class="mt-btn danger" onclick="MT2.pickImport('replace')">导入覆盖</button>
+    </div>
+    <input type="file" id="mt-import-file" accept="application/json" style="display:none">
+    <div class="mt-note">网页版和 APK 版的数据是分开的，互不同步；换浏览器或清除网站数据都会丢失。</div>
+  </div>
+  <div class="mt-card">
+    <div class="mt-card-h">训练设置</div>
+    <label class="mt-setting">校准试次比例
+      <select id="mt-set-calib" onchange="MT2.setCfg('calibRate', parseFloat(this.value))">
+        <option value="0">关闭</option><option value="0.1">10%</option>
+        <option value="0.2">20%</option><option value="0.3">30%</option>
+      </select>
+    </label>
+    <div class="mt-note">校准试次要求先选出答案再看对错，用来检查自评有没有放水。</div>
+    <label class="mt-setting">「慢」的判定阈值
+      <select id="mt-set-speed" onchange="MT2.setCfg('speedTarget', parseFloat(this.value))">
+        <option value="1.5">1.5s</option><option value="2">2.0s</option>
+        <option value="2.5">2.5s</option><option value="3">3.0s</option>
+      </select>
+    </label>
+  </div>
+</div>
+
+<div class="mt-page" id="screen-mt-map" style="display:none">
+  <div class="training-header">
+    <button class="back-btn" onclick="MT2.showDash()">← 返回</button>
+    <div class="progress">自动化地图</div>
+    <div class="timer" style="visibility:hidden">-</div>
+  </div>
+  <div id="mt-map-body"></div>
+</div>
