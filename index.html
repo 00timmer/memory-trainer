@@ -1,0 +1,2260 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>编码速度训练</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, 'PingFang SC', sans-serif; background: #0f0f1a; color: #e0e0e0; min-height: 100vh; }
+
+.header { background: #1a1a2e; padding: 12px 20px; padding-top: calc(env(safe-area-inset-top, 0px) + 12px); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2a2a4a; }
+.header h1 { font-size: 18px; color: #4a9eff; }
+.header .phase-badge { background: #4a9eff22; color: #4a9eff; padding: 4px 12px; border-radius: 12px; font-size: 13px; cursor: pointer; }
+
+.deck-tabs { display: flex; gap: 0; background: #1a1a2e; border-bottom: 1px solid #2a2a4a; padding: 0 12px; overflow-x: auto; white-space: nowrap; }
+.deck-tab { padding: 10px 16px; font-size: 14px; color: #888; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; flex-shrink: 0; }
+.deck-tab:hover { color: #ccc; }
+.deck-tab.active { color: #4a9eff; border-bottom-color: #4a9eff; }
+.deck-tab.add-tab { color: #4a9eff; font-size: 18px; font-weight: 700; padding: 8px 14px; }
+.deck-tab.add-tab:hover { color: #6bb3ff; }
+
+.home { max-width: 600px; margin: 0 auto; padding: 20px; }
+.stats-bar { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+.stat-card { background: #1a1a2e; border-radius: 12px; padding: 16px; text-align: center; }
+.stat-card .value { font-size: 28px; font-weight: 700; color: #4a9eff; }
+.stat-card .label { font-size: 12px; color: #888; margin-top: 4px; }
+.mode-grid { display: grid; gap: 10px; }
+.mode-btn { background: #1a1a2e; border: 1px solid #2a2a4a; border-radius: 12px; padding: 16px 20px; text-align: left; cursor: pointer; transition: all 0.2s; display: flex; justify-content: space-between; align-items: center; }
+.mode-btn:hover { background: #222244; border-color: #4a9eff; }
+.mode-btn .mode-name { font-size: 16px; font-weight: 600; }
+.mode-btn .mode-desc { font-size: 12px; color: #888; margin-top: 2px; }
+.mode-btn .mode-icon { font-size: 24px; }
+.mode-btn.disabled { opacity: 0.4; cursor: not-allowed; }
+.section-title { font-size: 13px; color: #666; margin: 20px 0 10px; text-transform: uppercase; letter-spacing: 1px; }
+.empty-msg { text-align: center; padding: 40px 20px; color: #555; }
+.empty-msg p { margin-bottom: 12px; }
+
+.training { display: none; max-width: 600px; margin: 0 auto; padding: 20px; }
+.training-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-top: env(safe-area-inset-top, 0px); }
+.training-header .back-btn { background: none; border: 1px solid #444; color: #888; padding: 6px 14px; border-radius: 8px; cursor: pointer; font-size: 13px; }
+.training-header .back-btn:hover { border-color: #4a9eff; color: #4a9eff; }
+.training-header .progress { font-size: 14px; color: #888; }
+.training-header .timer { font-size: 14px; color: #4a9eff; font-variant-numeric: tabular-nums; min-width: 50px; text-align: right; }
+
+.card { background: #1a1a2e; border-radius: 16px; padding: 40px; text-align: center; min-height: 300px; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; }
+.card .number { font-size: 96px; font-weight: 800; color: #fff; letter-spacing: 8px; }
+.card .number.multi { font-size: 56px; letter-spacing: 4px; }
+.card .number .suit-red { color: #ff4757; }
+.card .character { font-size: 48px; font-weight: 700; color: #4a9eff; margin-top: 16px; opacity: 0; transition: opacity 0.2s; }
+.card .character.visible { opacity: 1; }
+.card .tap-hint { position: absolute; bottom: 16px; font-size: 12px; color: #444; }
+
+.controls { display: flex; gap: 12px; margin-top: 20px; }
+.controls button { flex: 1; padding: 14px; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+.btn-reveal { background: #2a2a4a; color: #e0e0e0; }
+.btn-reveal:hover { background: #3a3a5a; }
+.btn-correct { background: #1a3a1a; color: #4caf50; border: 1px solid #4caf5044; }
+.btn-correct:hover { background: #2a4a2a; }
+.btn-wrong { background: #3a1a1a; color: #ff4757; border: 1px solid #ff475744; }
+.btn-wrong:hover { background: #4a2a2a; }
+.btn-vague { background: #3a2a1a; color: #ff9f43; border: 1px solid #ff9f4344; }
+.btn-vague:hover { background: #4a3a2a; }
+
+.f1-countdown { text-align: center; color: #888; font-size: 15px; margin-bottom: 10px; min-height: 22px; }
+.f2-choice { display: flex; gap: 12px; margin-top: 20px; }
+.f2-choice button { flex: 1; padding: 14px; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+.btn-f2-know { background: #2a2a4a; color: #e0e0e0; }
+.btn-f2-know:hover { background: #3a3a5a; }
+.btn-f2-dont { background: #3a1a1a; color: #ff4757; border: 1px solid #ff475744; }
+.btn-f2-dont:hover { background: #4a2a2a; }
+.btn-reveal.disabled { opacity: 0.4; cursor: not-allowed; }
+
+.mastery-dist { display: flex; gap: 8px; justify-content: center; margin-top: 16px; }
+.mastery-dist .m-item { background: #0f0f1a; border-radius: 8px; padding: 8px 14px; text-align: center; min-width: 60px; }
+.mastery-dist .m-val { font-size: 20px; font-weight: 700; }
+.mastery-dist .m-lbl { font-size: 11px; color: #888; margin-top: 2px; }
+.mastery-dist .m-val.m-new { color: #888; }
+.mastery-dist .m-val.m-hard { color: #ff4757; }
+.mastery-dist .m-val.m-med { color: #ff9f43; }
+.mastery-dist .m-val.m-easy { color: #4caf50; }
+
+.sprint-timer-bar { height: 4px; background: #2a2a4a; border-radius: 2px; margin-top: 16px; overflow: hidden; }
+.sprint-timer-bar .fill { height: 100%; background: #4a9eff; transition: width 0.1s linear; }
+.sprint-timer-bar .fill.warning { background: #ff9f43; }
+.sprint-timer-bar .fill.danger { background: #ff4757; }
+
+.summary { display: none; max-width: 600px; margin: 0 auto; padding: 20px; }
+.summary-card { background: #1a1a2e; border-radius: 16px; padding: 30px; text-align: center; }
+.summary-card h2 { font-size: 24px; margin-bottom: 20px; color: #4a9eff; }
+.summary-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 24px; }
+.summary-stat { background: #0f0f1a; border-radius: 10px; padding: 16px; }
+.summary-stat .val { font-size: 32px; font-weight: 700; }
+.summary-stat .lbl { font-size: 12px; color: #888; margin-top: 4px; }
+.summary-stat .val.green { color: #4caf50; }
+.summary-stat .val.red { color: #ff4757; }
+.summary-stat .val.blue { color: #4a9eff; }
+.weak-list { text-align: left; margin-top: 16px; }
+.weak-list h3 { font-size: 14px; color: #ff9f43; margin-bottom: 8px; }
+.weak-list .items { display: flex; flex-wrap: wrap; gap: 6px; }
+.weak-list .item { background: #ff9f4322; color: #ff9f43; padding: 4px 10px; border-radius: 6px; font-size: 13px; }
+.weak-review-summary { text-align:left; margin-top:16px; padding:14px; background:#1a1a2e; border-radius:12px; border:1px solid #ff9f4344; }
+.weak-review-summary h3 { font-size:14px; color:#ff9f43; margin:0 0 10px; }
+.weak-review-summary .wr-item { display:flex; align-items:center; justify-content:space-between; padding:8px 10px; margin:4px 0; background:#ffffff08; border-radius:8px; font-size:13px; }
+.weak-review-summary .wr-item .wr-code { color:#fff; }
+.weak-review-summary .wr-item .wr-streak { color:#888; font-size:12px; }
+.weak-review-summary .wr-remove { background:#2a6a2a; color:#fff; border:none; padding:4px 10px; border-radius:6px; font-size:12px; cursor:pointer; }
+.weak-review-summary .wr-remove:hover { background:#3a8a3a; }
+.weak-review-summary .wr-cleared { color:#2ecc71; font-size:14px; text-align:center; padding:12px; }
+
+.browse { display: none; max-width: 800px; margin: 0 auto; padding: 20px; }
+.browse-toolbar { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+.browse-toolbar button { background: #1a1a2e; border: 1px solid #2a2a4a; color: #4a9eff; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 13px; }
+.browse-toolbar button:hover { background: #222244; border-color: #4a9eff; }
+.browse-toolbar button.danger { color: #ff4757; }
+.browse-toolbar button.danger:hover { border-color: #ff4757; }
+.browse-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+.browse-grid.poker-grid { grid-template-columns: repeat(4, 1fr); }
+.browse-item { background: #1a1a2e; border-radius: 8px; padding: 10px; text-align: center; cursor: pointer; transition: all 0.2s; position: relative; }
+.browse-item:hover { background: #222244; }
+.browse-item .num { font-size: 20px; font-weight: 700; color: #4a9eff; }
+.browse-item .num .suit-red { color: #ff4757; }
+.browse-item .name { font-size: 13px; color: #ccc; margin-top: 4px; }
+.browse-item.weak { border: 1px solid #ff9f4344; }
+.browse-item.edited { border: 1px solid #4a9eff44; }
+.browse-item .edited-dot { color: #4a9eff; font-size: 10px; }
+.browse-item .del-btn { display: none; position: absolute; top: 2px; right: 6px; color: #ff4757; font-size: 14px; cursor: pointer; line-height: 1; }
+.browse-item:hover .del-btn { display: block; }
+.browse-suit-label { grid-column: 1 / -1; font-size: 14px; color: #666; padding: 10px 0 4px; border-top: 1px solid #2a2a4a; margin-top: 8px; }
+.browse-suit-label:first-child { border-top: none; margin-top: 0; }
+
+.stats-page { display: none; max-width: 600px; margin: 0 auto; padding: 20px; }
+.stats-section { background: #1a1a2e; border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+.stats-section h3 { font-size: 15px; color: #4a9eff; margin-bottom: 12px; }
+.stats-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #2a2a4a; font-size: 14px; }
+.stats-row:last-child { border: none; }
+
+.modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #00000088; z-index: 100; justify-content: center; align-items: center; }
+.modal-overlay.show { display: flex; }
+.modal { background: #1a1a2e; border-radius: 16px; padding: 24px; max-width: 400px; width: 90%; }
+.modal h3 { font-size: 18px; margin-bottom: 16px; color: #4a9eff; }
+.modal input { width: 100%; padding: 12px 16px; background: #0f0f1a; border: 1px solid #4a9eff44; border-radius: 10px; color: #fff; font-size: 16px; outline: none; margin-bottom: 8px; }
+.modal input:focus { border-color: #4a9eff; }
+.modal .hint-text { font-size: 12px; color: #666; margin-bottom: 12px; }
+.modal .btn-row { display: flex; gap: 10px; margin-top: 12px; }
+.modal .btn-row button { flex: 1; padding: 10px; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; }
+.btn-save { background: #4a9eff22; color: #4a9eff; }
+.btn-cancel { background: #2a2a4a; color: #888; }
+.btn-danger { background: #ff475722; color: #ff4757; }
+.phase-option { padding: 12px 16px; border: 1px solid #2a2a4a; border-radius: 10px; margin-bottom: 8px; cursor: pointer; transition: all 0.2s; }
+.phase-option:hover { border-color: #4a9eff; background: #222244; }
+.phase-option.active { border-color: #4a9eff; background: #4a9eff22; }
+.phase-option .phase-name { font-weight: 600; }
+
+.edit-modal .edit-code { font-size: 48px; font-weight: 800; color: #4a9eff; margin-bottom: 16px; }
+.edit-modal .edit-code .suit-red { color: #ff4757; }
+.edit-modal .edit-default { font-size: 12px; color: #666; margin-top: 4px; margin-bottom: 8px; }
+
+.kb-hint { text-align: center; margin-top: 12px; font-size: 11px; color: #444; }
+
+.streak-bar { display: flex; align-items: center; gap: 10px; background: #1a1a2e; border-radius: 12px; padding: 14px 18px; margin-bottom: 16px; }
+.streak-fire { font-size: 28px; }
+.streak-info { flex: 1; }
+.streak-count { font-size: 20px; font-weight: 700; color: #ff9f43; }
+.streak-label { font-size: 12px; color: #888; margin-top: 2px; }
+
+/* Sequence mode */
+.seq-memorize { max-width: 600px; margin: 0 auto; padding: 20px; display: none; }
+.seq-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.seq-header .back-btn { background: none; border: none; color: #4a9eff; font-size: 16px; cursor: pointer; }
+.seq-timer { font-size: 18px; font-weight: 700; color: #ff9f43; }
+.seq-cards { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 20px; }
+.seq-card-item { background: #1a1a2e; border-radius: 10px; padding: 14px 10px; text-align: center; min-width: 70px; }
+.seq-card-item .seq-code { font-size: 22px; font-weight: 800; color: #fff; }
+.seq-card-item .seq-code .suit-red { color: #ff4757; }
+.seq-card-item .seq-name { font-size: 11px; color: #4a9eff; margin-top: 4px; }
+.seq-card-item.hidden .seq-code { visibility: hidden; }
+.seq-card-item.hidden .seq-name { visibility: hidden; }
+.seq-mode-toggle { display: flex; gap: 0; margin-bottom: 16px; justify-content: center; }
+.seq-mode-toggle button { padding: 8px 20px; border: 1px solid #4a9eff44; background: #1a1a2e; color: #888; font-size: 13px; cursor: pointer; }
+.seq-mode-toggle button:first-child { border-radius: 8px 0 0 8px; }
+.seq-mode-toggle button:last-child { border-radius: 0 8px 8px 0; }
+.seq-mode-toggle button.active { background: #4a9eff22; color: #4a9eff; border-color: #4a9eff; }
+.seq-ready-btn { width: 100%; padding: 16px; background: #4a9eff; color: #fff; border: none; border-radius: 12px; font-size: 18px; font-weight: 700; cursor: pointer; }
+.seq-ready-btn:hover { background: #3a8eef; }
+
+/* Recall phase */
+.seq-recall { max-width: 600px; margin: 0 auto; padding: 20px; display: none; }
+.seq-recall-slots { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 16px; }
+.seq-slot { width: 64px; height: 64px; background: #1a1a2e; border: 2px solid #2a2a4a; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700; color: #fff; }
+.seq-slot.current { border-color: #4a9eff; background: #4a9eff11; }
+.seq-slot.correct { border-color: #4caf50; background: #4caf5022; }
+.seq-slot.wrong { border-color: #ff4757; background: #ff475722; }
+.seq-options { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.seq-opt-btn { padding: 10px 14px; background: #1a1a2e; border: 1px solid #2a2a4a; border-radius: 8px; color: #fff; font-size: 16px; font-weight: 600; cursor: pointer; min-width: 52px; text-align: center; }
+.seq-opt-btn:hover { background: #222244; border-color: #4a9eff; }
+.seq-opt-btn.used { opacity: 0.3; pointer-events: none; }
+.seq-opt-btn .suit-red { color: #ff4757; }
+
+.setting-toggle { display: flex; align-items: center; justify-content: space-between; }
+.toggle-switch { position: relative; width: 44px; height: 24px; cursor: pointer; }
+.toggle-switch input { opacity: 0; width: 0; height: 0; }
+.toggle-slider { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: #2a2a4a; border-radius: 12px; transition: 0.2s; }
+.toggle-slider:before { content: ''; position: absolute; width: 18px; height: 18px; left: 3px; bottom: 3px; background: #888; border-radius: 50%; transition: 0.2s; }
+.toggle-switch input:checked + .toggle-slider { background: #4a9eff44; }
+.toggle-switch input:checked + .toggle-slider:before { transform: translateX(20px); background: #4a9eff; }
+
+.mode-settings label { display: block; font-size: 14px; color: #ccc; margin-bottom: 6px; }
+.mode-settings .setting-row { margin-bottom: 14px; }
+.mode-settings input[type="number"] { width: 80px; padding: 8px 12px; background: #0f0f1a; border: 1px solid #4a9eff44; border-radius: 8px; color: #fff; font-size: 16px; outline: none; text-align: center; }
+.mode-settings input[type="number"]:focus { border-color: #4a9eff; }
+.mode-settings .hint { font-size: 12px; color: #666; margin-top: 4px; }
+.code-picker { max-height: 320px; overflow-y: auto; background: #0f0f1a; border-radius: 10px; padding: 10px; }
+.code-picker::-webkit-scrollbar { width: 4px; }
+.code-picker::-webkit-scrollbar-thumb { background: #4a9eff44; border-radius: 2px; }
+.picker-group { margin-bottom: 8px; }
+.picker-group-header { display: flex; align-items: center; gap: 8px; padding: 6px 4px; cursor: pointer; border-radius: 6px; }
+.picker-group-header:hover { background: #1a1a2e; }
+.picker-group-header input[type="checkbox"] { accent-color: #4a9eff; width: 16px; height: 16px; cursor: pointer; }
+.picker-group-header span { font-size: 13px; font-weight: 600; color: #4a9eff; }
+.picker-items { display: flex; flex-wrap: wrap; gap: 4px; padding: 4px 0 4px 24px; }
+.picker-item { display: flex; align-items: center; gap: 4px; padding: 3px 8px; background: #1a1a2e; border-radius: 6px; cursor: pointer; font-size: 12px; }
+.picker-item:hover { background: #222244; }
+.picker-item input[type="checkbox"] { accent-color: #4a9eff; width: 14px; height: 14px; cursor: pointer; }
+.picker-item label { cursor: pointer; color: #ccc; white-space: nowrap; }
+.picker-actions { display: flex; gap: 8px; margin-bottom: 8px; }
+.picker-actions button { background: #1a1a2e; border: 1px solid #2a2a4a; color: #4a9eff; padding: 4px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; }
+.picker-actions button:hover { background: #222244; }
+
+.lock-in-msg {
+  text-align: center;
+  color: #4a9eff;
+  font-size: 15px;
+  padding: 20px;
+  animation: pulse 1s infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+.answer-fade {
+  filter: blur(12px);
+  opacity: 0.4;
+  transition: filter 0.6s ease, opacity 0.6s ease;
+}
+.answer-fade.visible {
+  filter: blur(0px);
+  opacity: 1;
+}
+
+/* Kids mode styles */
+.browse-grid.kids-grid { grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.browse-grid.kids-grid .browse-item { padding: 14px 8px; }
+.browse-grid.kids-grid .browse-item .num { font-size: 28px; }
+.browse-grid.kids-grid .browse-item .name { font-size: 11px; line-height: 1.4; }
+.card.kids-card .number { font-size: 120px; letter-spacing: 0; }
+.card.kids-card .character { font-size: 32px; line-height: 1.5; }
+
+@media (max-width: 480px) {
+  .card .number { font-size: 72px; }
+  .card .number.multi { font-size: 42px; }
+  .card .character { font-size: 36px; }
+  .browse-grid { grid-template-columns: repeat(4, 1fr); }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>编码速度训练</h1>
+  <div class="phase-badge" onclick="showPhaseModal()">Phase <span id="phase-display">1</span></div>
+</div>
+<div class="deck-tabs" id="deck-tabs"></div>
+
+<div class="home" id="screen-home">
+  <div class="stats-bar">
+    <div class="stat-card"><div class="value" id="home-today-count">0</div><div class="label">今日练习</div></div>
+    <div class="stat-card"><div class="value" id="home-accuracy">-</div><div class="label">正确率</div></div>
+    <div class="stat-card"><div class="value" id="home-weak-count">0</div><div class="label">弱项</div></div>
+  </div>
+  <div class="streak-bar" id="streak-bar">
+    <div class="streak-fire">🔥</div>
+    <div class="streak-info"><div class="streak-count" id="streak-count">0</div><div class="streak-label">连续训练天数</div></div>
+  </div>
+  <div id="home-empty" class="empty-msg" style="display:none">
+    <p>当前编码类型为空</p>
+    <button class="btn-save" style="padding:10px 24px;border:none;border-radius:10px;font-size:14px;cursor:pointer" onclick="showBrowse()">去添加编码</button>
+  </div>
+  <div id="home-modes">
+    <div class="section-title">训练模式</div>
+    <div class="mode-grid">
+      <div class="mode-btn" onclick="openModeSettings('random')"><div><div class="mode-name">随机闪卡</div><div class="mode-desc" id="random-desc">编码 → 人物（20题）</div></div><div class="mode-icon">⚡</div></div>
+      <div class="mode-btn" onclick="openModeSettings('reverse')"><div><div class="mode-name">反向闪卡</div><div class="mode-desc">人物 → 编码（15题）</div></div><div class="mode-icon">🔄</div></div>
+      <div class="mode-btn" onclick="openModeSettings('confusable')" id="btn-confusable"><div><div class="mode-name" id="confusable-label">易混淆对</div><div class="mode-desc" id="confusable-desc">交替训练</div></div><div class="mode-icon">🔀</div></div>
+      <div class="mode-btn" onclick="openModeSettings('sprint')"><div><div class="mode-name">冲刺挑战</div><div class="mode-desc">限时速度测试（10题）</div></div><div class="mode-icon">🏃</div></div>
+      <div class="mode-btn" onclick="openModeSettings('weak')"><div><div class="mode-name">弱项复习</div><div class="mode-desc">专攻卡住的编码</div></div><div class="mode-icon">🎯</div></div>
+      <div class="mode-btn" onclick="startTodayWeakReview()" id="btn-today-weak" style="display:none"><div><div class="mode-name">今日弱项</div><div class="mode-desc" id="today-weak-desc">今天新增的弱项</div></div><div class="mode-icon">📌</div></div>
+      <div class="mode-btn" onclick="openModeSettings('multi')" id="btn-multi"><div><div class="mode-name" id="multi-label">多编码连读</div><div class="mode-desc" id="multi-desc">Phase 3+ 解锁</div></div><div class="mode-icon">📦</div></div>
+      <div class="mode-btn" onclick="openModeSettings('sequential')"><div><div class="mode-name">顺序练习</div><div class="mode-desc">按顺序逐张练习</div></div><div class="mode-icon">📋</div></div>
+      <div class="mode-btn" onclick="openModeSettings('sequence')"><div><div class="mode-name">顺序记忆</div><div class="mode-desc">记忆 → 回忆顺序</div></div><div class="mode-icon">🧠</div></div>
+    </div>
+    <div class="section-title">其他</div>
+    <div class="mode-grid">
+      <div class="mode-btn" onclick="showBrowse()"><div><div class="mode-name">浏览全部编码</div><div class="mode-desc" id="browse-desc">查看对照表</div></div><div class="mode-icon">📖</div></div>
+      <div class="mode-btn" onclick="showStatsPage()"><div><div class="mode-name">训练记录</div><div class="mode-desc">查看历史数据</div></div><div class="mode-icon">📊</div></div>
+      <div class="mode-btn" onclick="resetWeakItems()"><div><div class="mode-name">清空弱项</div><div class="mode-desc">重置弱项队列</div></div><div class="mode-icon">🗑️</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="training" id="screen-training">
+  <div class="training-header">
+    <button class="back-btn" onclick="endTraining()">← 返回</button>
+    <div class="progress" id="train-progress">1 / 20</div>
+    <div class="timer" id="train-timer">0.0s</div>
+  </div>
+  <div class="card"><div class="number" id="card-prompt"></div><div class="character" id="card-answer"></div><div class="tap-hint" id="tap-hint">按空格键翻牌</div></div>
+  <div class="sprint-timer-bar" id="sprint-bar" style="display:none"><div class="fill" id="sprint-fill"></div></div>
+  <div class="f1-countdown" id="f1-countdown"></div>
+  <div class="controls" id="train-controls"><button class="btn-reveal" id="btn-reveal-main" onclick="revealCard()">翻牌 (空格)</button></div>
+  <div class="f2-choice" id="f2-controls" style="display:none">
+    <button class="btn-f2-know" onclick="f2Know()">我已尝试回忆，翻牌</button>
+    <button class="btn-f2-dont" onclick="f2DontKnow()">我不会</button>
+  </div>
+  <div id="think-time-hint" style="display:none;text-align:center;font-size:13px;color:#888;margin-bottom:6px;"></div>
+  <div class="controls" id="judge-controls" style="display:none">
+    <button class="btn-correct" id="btn-judge-remember" onclick="judgeCard('remember')">✓ 记住了 (←)</button>
+    <button class="btn-vague" id="btn-judge-vague" onclick="judgeCard('vague')">△ 模糊 (↓)</button>
+    <button class="btn-wrong" id="btn-judge-dont" onclick="judgeCard('dont_know')">✗ 不会 (→)</button>
+  </div>
+  <div class="kb-hint">空格=翻牌 ←=记住了 ↓=模糊 →=不会</div>
+</div>
+
+<div class="summary" id="screen-summary">
+  <div class="summary-card">
+    <h2 id="summary-title">训练完成</h2>
+    <div class="summary-stats">
+      <div class="summary-stat"><div class="val green" id="sum-correct">0</div><div class="lbl">记住了</div></div>
+      <div class="summary-stat"><div class="val red" id="sum-wrong">0</div><div class="lbl">不会</div></div>
+      <div class="summary-stat"><div class="val blue" id="sum-avg">0s</div><div class="lbl">平均用时</div></div>
+      <div class="summary-stat"><div class="val blue" id="sum-total">0s</div><div class="lbl">总用时</div></div>
+    </div>
+    <div class="weak-list" id="sum-weak" style="display:none"><h3>本轮卡住：</h3><div class="items" id="sum-weak-items"></div></div>
+    <div id="sum-mastery-dist" style="display:none"></div>
+    <div class="weak-review-summary" id="sum-weak-review" style="display:none"></div>
+  </div>
+  <div class="controls">
+    <button class="btn-reveal" onclick="replayLastDeck()">再来一轮（同组）</button>
+    <button class="btn-reveal" onclick="startMode(lastMode)" style="background:#2a6a2a">再来一轮（新组）</button>
+    <button class="btn-reveal" id="btn-replay-missed" onclick="replayMissedCards()" style="background:#e55;display:none">卡住的再来一轮</button>
+    <button class="btn-correct" onclick="showHome()">返回首页</button>
+  </div>
+</div>
+
+<div class="browse" id="screen-browse">
+  <div class="training-header">
+    <button class="back-btn" onclick="showHome()">← 返回</button>
+    <div class="progress" id="browse-title">全部编码</div>
+    <div></div>
+  </div>
+  <div class="browse-toolbar" id="browse-toolbar"></div>
+  <div class="browse-grid" id="browse-grid"></div>
+</div>
+
+<div class="seq-memorize" id="screen-seq-memorize">
+  <div class="seq-header">
+    <button class="back-btn" onclick="endSequence()">← 返回</button>
+    <div>记忆阶段</div>
+    <div class="seq-timer" id="seq-mem-timer">0.0s</div>
+  </div>
+  <div class="seq-mode-toggle">
+    <button id="seq-show-all" class="active" onclick="setSeqShowMode('all')">ALL</button>
+    <button id="seq-show-one" onclick="setSeqShowMode('one')">BY ONE</button>
+  </div>
+  <div class="seq-cards" id="seq-mem-cards"></div>
+  <button class="seq-ready-btn" id="seq-ready-btn" onclick="startSeqRecall()">READY</button>
+</div>
+
+<div class="seq-recall" id="screen-seq-recall">
+  <div class="seq-header">
+    <button class="back-btn" onclick="endSequence()">← 返回</button>
+    <div>回忆阶段</div>
+    <div class="seq-timer" id="seq-rec-timer">0.0s</div>
+  </div>
+  <div id="seq-recall-progress" style="text-align:center;margin-bottom:12px;color:#888;font-size:14px;"></div>
+  <div class="seq-recall-slots" id="seq-recall-slots"></div>
+  <div class="seq-options" id="seq-recall-options"></div>
+</div>
+
+<div class="stats-page" id="screen-stats">
+  <div class="training-header"><button class="back-btn" onclick="showHome()">← 返回</button><div class="progress">训练记录</div><div></div></div>
+  <div class="stats-section"><h3>弱项队列</h3><div id="stats-weak-list"></div></div>
+  <div class="stats-section"><h3>最近 7 天</h3><div id="stats-daily"></div></div>
+</div>
+
+<!-- Modals -->
+<div class="modal-overlay" id="mode-settings-modal">
+  <div class="modal mode-settings">
+    <h3 id="mode-settings-title">训练设置</h3>
+    <div class="setting-row" id="setting-count-row">
+      <label>练习数量</label>
+      <input type="number" id="mode-count-input" min="1" max="999" value="20">
+      <div class="hint" id="mode-count-hint"></div>
+    </div>
+    <div class="setting-row" id="setting-repeat-row">
+      <div class="setting-toggle">
+        <label>允许重复卡片</label>
+        <label class="toggle-switch"><input type="checkbox" id="mode-repeat-toggle"><span class="toggle-slider"></span></label>
+      </div>
+      <div class="hint">开启后同一卡片可出现多次</div>
+    </div>
+    <div class="setting-row" id="setting-range-row">
+      <label>选择编码范围</label>
+      <div class="picker-actions">
+        <button onclick="pickerSelectAll(true)">全选</button>
+        <button onclick="pickerSelectAll(false)">全不选</button>
+      </div>
+      <div class="code-picker" id="code-picker"></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn-cancel" onclick="closeModal('mode-settings-modal')">取消</button>
+      <button class="btn-save" onclick="confirmModeStart()">开始训练</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="edit-modal">
+  <div class="modal edit-modal">
+    <h3>修改编码</h3>
+    <div class="edit-code" id="edit-code"></div>
+    <input type="text" id="edit-input" placeholder="输入人物名称">
+    <div class="edit-default" id="edit-default"></div>
+    <div class="btn-row">
+      <button class="btn-cancel" onclick="closeModal('edit-modal')">取消</button>
+      <button class="btn-danger" onclick="resetOneCode()">恢复默认</button>
+      <button class="btn-save" onclick="saveEdit()">保存</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="create-deck-modal">
+  <div class="modal">
+    <h3>新建编码类型</h3>
+    <input type="text" id="new-deck-name" placeholder="名称，如：101-199">
+    <div class="hint-text">创建后可在浏览页添加编码</div>
+    <div class="btn-row">
+      <button class="btn-cancel" onclick="closeModal('create-deck-modal')">取消</button>
+      <button class="btn-save" onclick="createDeck()">创建</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="add-code-modal">
+  <div class="modal">
+    <h3>添加编码</h3>
+    <input type="text" id="new-code-key" placeholder="编码（如：101、♠A）">
+    <input type="text" id="new-code-name" placeholder="人物名称">
+    <div class="btn-row">
+      <button class="btn-cancel" onclick="closeModal('add-code-modal')">取消</button>
+      <button class="btn-save" onclick="addCodeToCustomDeck()">添加</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="rename-deck-modal">
+  <div class="modal">
+    <h3>重命名</h3>
+    <input type="text" id="rename-deck-input" placeholder="新名称">
+    <div class="btn-row">
+      <button class="btn-cancel" onclick="closeModal('rename-deck-modal')">取消</button>
+      <button class="btn-save" onclick="renameDeck()">保存</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="phase-modal">
+  <div class="modal">
+    <h3>选择阶段</h3>
+    <div class="phase-option" onclick="setPhase(1)"><div class="phase-name">Phase 1：单编码 &lt; 2秒</div></div>
+    <div class="phase-option" onclick="setPhase(2)"><div class="phase-name">Phase 2：单编码 &lt; 1秒</div></div>
+    <div class="phase-option" onclick="setPhase(3)"><div class="phase-name">Phase 3：双编码 &lt; 2秒</div></div>
+    <div class="phase-option" onclick="setPhase(4)"><div class="phase-name">Phase 4：三编码 &lt; 3秒</div></div>
+    <div style="margin-top:12px"><button class="btn-reveal" style="width:100%" onclick="closeModal('phase-modal')">关闭</button></div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// BUILT-IN DATA
+// ============================================================
+const NUMBER_DATA = {
+  "00":"青雉","01":"霍金","02":"唐老鸭","03":"唐三","04":"老四（张尚）",
+  "05":"老沙","06":"肖申克","07":"白起","08":"葫芦娃","09":"鸣人",
+  "10":"林志颖","11":"路飞","12":"特兰克斯","13":"水晶婆婆","14":"Mr3",
+  "15":"多弗拉明戈","16":"界王","17":"布玛","18":"机器猫","19":"川普",
+  "20":"山治","21":"香蕉鳄鱼","22":"17/18号","23":"乔丹","24":"黑胡子",
+  "25":"无名","26":"弗兰奇","27":"流川枫","28":"恶龙","29":"赤犬",
+  "30":"马斯克","31":"奥尼尔","32":"火舞","33":"黄飞鸿","34":"周杰伦",
+  "35":"尼莫","36":"鹿丸","37":"雏田","38":"哈利波特","39":"纪晓岚",
+  "40":"战国","41":"亚古兽","42":"天使","43":"琵卡","44":"娜美",
+  "45":"波尼","46":"石榴姐","47":"甚平","48":"罗宾","49":"姥爷",
+  "50":"毛泽东","51":"大空翼","52":"我自己","53":"佛祖","54":"索隆",
+  "55":"可可罗婆婆","56":"纲手","57":"Baby 5","58":"小悟空","59":"太白金星",
+  "60":"曾小贤","61":"砂糖","62":"齐天大圣","63":"李白","64":"龟仙人",
+  "65":"阿普","66":"奇犽","67":"绿牛","68":"卡普","69":"宁次",
+  "70":"佐助","71":"马尔科","72":"壁企鹅","73":"诸葛亮","74":"甘福尔",
+  "75":"鸟叔","76":"犀牛守卫","77":"擎天柱","78":"横纲","79":"Big Mom",
+  "80":"林克","81":"小龙女","82":"乌索普","83":"铁扇公主","84":"卷毛老师",
+  "85":"罗杰","86":"董存瑞","87":"卡卡西","88":"龙","89":"布罗利",
+  "90":"皮卡丘","91":"樱木花道","92":"白胡子","93":"大力水手","94":"班主任",
+  "95":"凯多","96":"卡库","97":"薇薇","98":"雷利","99":"张无忌"
+};
+const POKER_DATA = {
+  "♠A":"高进","♥A":"罗","♣A":"艾斯","♦A":"姚明",
+  "♠2":"姐姐（李琳）","♥2":"冯克雷","♣2":"乔丹","♦2":"袁速（点点）",
+  "♠3":"奥尼尔","♥3":"火舞","♣3":"黄飞鸿","♦3":"周杰伦",
+  "♠4":"亚古兽","♥4":"天使","♣4":"琵卡","♦4":"娜美",
+  "♠5":"大空翼","♥5":"我自己","♣5":"佛祖","♦5":"索隆",
+  "♠6":"砂糖","♥6":"齐天大圣","♣6":"李白","♦6":"龟仙人",
+  "♠7":"马尔科","♥7":"阿拉蕾","♣7":"诸葛亮","♦7":"甘福尔",
+  "♠8":"小龙女","♥8":"乌索普","♣8":"铁扇公主","♦8":"卷毛老师",
+  "♠9":"樱木花道","♥9":"白胡子","♣9":"大力水手","♦9":"班主任",
+  "♠10":"慕容复","♥10":"神仙姐姐","♣10":"乔峰","♦10":"虚竹",
+  "♠J":"Jack船长","♥J":"乔伊波伊","♣J":"成龙","♦J":"桃白白",
+  "♠Q":"马云","♥Q":"老婆","♣Q":"机器猫","♦Q":"钻石皇后",
+  "♠K":"秦始皇","♥K":"刘备","♣K":"萨博","♦K":"土影",
+  "大王":"弗力萨","小王":"悟天克斯"
+};
+const LOCATION_DATA = {
+  "1":"正门口","2":"门口柏油马路","3":"车库门","4":"工具台","5":"抽屉",
+  "6":"木架子","7":"洗手台","8":"马桶","9":"窗户台","10":"健身区",
+  "11":"玩具柜","12":"书架","13":"九宫格","14":"电脑书桌","15":"鞋柜",
+  "16":"水槽","17":"洗衣机","18":"鞋架","19":"电箱","20":"木架子",
+  "21":"冰箱","22":"楼梯","23":"鱼缸","24":"钢琴","25":"电视柜",
+  "26":"窗户","27":"沙发","28":"六宫格柜子","29":"餐桌","30":"吊灯",
+  "31":"吧台","32":"冰箱","33":"锅炉","34":"洗手台","35":"毛巾墙",
+  "36":"浴盆","37":"柜子","38":"床","39":"桌子","40":"书架",
+  "41":"床","42":"墙上地图","43":"架子","44":"沙发","45":"床",
+  "46":"太阳伞","47":"桌椅","48":"箱子","49":"烧烤炉","50":"秋千",
+  "51":"蹦床","52":"门","53":"小路","54":"储藏室","55":"花坛",
+  "56":"菜地","57":"水龙头","58":"大Ayden房子","59":"Robert house","60":"Frank house",
+  "61":"Priscialla house","62":"James house","63":"Sky house","64":"Jackson house","65":"旗",
+  "66":"大门","67":"后院正门","68":"棒球场","69":"秋千","70":"爬高台阶",
+  "71":"滑梯","72":"跷跷板","73":"篮球场","74":"后院后门","75":"中学网球场",
+  "76":"中学正门","77":"停车场","78":"小Ayden家","79":"图书馆停车场","80":"图书馆正门",
+  "81":"消防局","82":"mario pizza","83":"ups","84":"tesla charger","85":"福祥小馆",
+  "86":"FedEx","87":"homedepot","88":"画画课地址","89":"日本超市","90":"保龄球馆",
+  "91":"足球馆","92":"象棋馆","93":"whole food","94":"CVS","95":"hmart",
+  "96":"chick-fil-A","97":"ikea 正门","98":"ikea停车场","99":"海鲜馆","100":"健身房",
+  "101":"pizza馆","102":"跆拳道馆","103":"target","104":"dollartree","105":"gas station",
+  "106":"Trade joe","107":"Walgreens","108":"中餐馆","109":"back to chase","110":"PM pediatric",
+  "111":"McDonald","112":"woodbury park 门口","113":"滑雪斜坡","114":"篮球场","115":"壁球场",
+  "116":"playground","117":"泳池正门","118":"幼儿泳池","119":"儿童泳池左","120":"泳道",
+  "121":"跳水区","122":"儿童泳池右","123":"bbq场地","124":"棒球场","125":"网球场"
+};
+const SUITS = ['♠','♥','♣','♦'];
+const RANKS = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+const LOCATION_GROUPS = 25;
+
+// Japanese Hiragana
+const HIRAGANA_DATA = {
+  "あ":"a 啊 ㄚ","い":"i 衣 ㄧ","う":"u 乌 ㄨ","え":"e 诶 ㄝ","お":"o 喔 ㄛ",
+  "か":"ka 卡 ㄎㄚ","き":"ki ㄎㄧ","く":"ku 哭 ㄎㄨ","け":"ke 客 ㄎㄜ","こ":"ko 口 ㄎㄛ",
+  "さ":"sa 撒 ㄙㄚ","し":"shi 西 ㄒㄧ","す":"su 苏 ㄙㄨ","せ":"se 塞 ㄙㄟ","そ":"so 搜 ㄙㄡ",
+  "た":"ta 它 ㄊㄚ","ち":"chi 七 ㄑㄧ","つ":"tsu 粗 ㄘㄨ","て":"te 贴 ㄊㄝ","と":"to 拖 ㄊㄛ",
+  "な":"na 那 ㄋㄚ","に":"ni 你 ㄋㄧ","ぬ":"nu 奴 ㄋㄨ","ね":"ne 呢 ㄋㄟ","の":"no 诺 ㄋㄛ",
+  "は":"ha 哈 ㄏㄚ","ひ":"hi 希 ㄏㄧ","ふ":"fu 夫 ㄈㄨ","へ":"he 嘿 ㄏㄜ","ほ":"ho 后 ㄏㄛ",
+  "ま":"ma 妈 ㄇㄚ","み":"mi 米 ㄇㄧ","む":"mu 木 ㄇㄨ","め":"me 妹 ㄇㄟ","も":"mo 摸 ㄇㄛ",
+  "や":"ya 呀 ㄧㄚ","ゆ":"yu 优 ㄧㄡ","よ":"yo 哟 ㄧㄛ",
+  "ら":"ra 啦 ㄌㄚ","り":"ri 哩 ㄌㄧ","る":"ru 噜 ㄌㄨ","れ":"re 咧 ㄌㄟ","ろ":"ro 啰 ㄌㄛ",
+  "わ":"wa 哇 ㄨㄚ","を":"o 喔 ㄛ","ん":"n 嗯 ㄣ"
+};
+const HIRAGANA_ROWS = ['あいうえお','かきくけこ','さしすせそ','たちつてと','なにぬねの','はひふへほ','まみむめも','やゆよ','らりるれろ','わをん'];
+const HIRAGANA_ROW_NAMES = ['あ行(a)','か行(ka)','さ行(sa)','た行(ta)','な行(na)','は行(ha)','ま行(ma)','や行(ya)','ら行(ra)','わ行(wa)'];
+
+// Japanese Katakana
+const KATAKANA_DATA = {
+  "ア":"a 啊 ㄚ","イ":"i 衣 ㄧ","ウ":"u 乌 ㄨ","エ":"e 诶 ㄝ","オ":"o 喔 ㄛ",
+  "カ":"ka 卡 ㄎㄚ","キ":"ki ㄎㄧ","ク":"ku 哭 ㄎㄨ","ケ":"ke 客 ㄎㄜ","コ":"ko 口 ㄎㄛ",
+  "サ":"sa 撒 ㄙㄚ","シ":"shi 西 ㄒㄧ","ス":"su 苏 ㄙㄨ","セ":"se 塞 ㄙㄟ","ソ":"so 搜 ㄙㄡ",
+  "タ":"ta 它 ㄊㄚ","チ":"chi 七 ㄑㄧ","ツ":"tsu 粗 ㄘㄨ","テ":"te 贴 ㄊㄝ","ト":"to 拖 ㄊㄛ",
+  "ナ":"na 那 ㄋㄚ","ニ":"ni 你 ㄋㄧ","ヌ":"nu 奴 ㄋㄨ","ネ":"ne 呢 ㄋㄟ","ノ":"no 诺 ㄋㄛ",
+  "ハ":"ha 哈 ㄏㄚ","ヒ":"hi 希 ㄏㄧ","フ":"fu 夫 ㄈㄨ","ヘ":"he 嘿 ㄏㄜ","ホ":"ho 后 ㄏㄛ",
+  "マ":"ma 妈 ㄇㄚ","ミ":"mi 米 ㄇㄧ","ム":"mu 木 ㄇㄨ","メ":"me 妹 ㄇㄟ","モ":"mo 摸 ㄇㄛ",
+  "ヤ":"ya 呀 ㄧㄚ","ユ":"yu 优 ㄧㄡ","ヨ":"yo 哟 ㄧㄛ",
+  "ラ":"ra 啦 ㄌㄚ","リ":"ri 哩 ㄌㄧ","ル":"ru 噜 ㄌㄨ","レ":"re 咧 ㄌㄟ","ロ":"ro 啰 ㄌㄛ",
+  "ワ":"wa 哇 ㄨㄚ","ヲ":"o 喔 ㄛ","ン":"n 嗯 ㄣ"
+};
+const KATAKANA_ROWS = ['アイウエオ','カキクケコ','サシスセソ','タチツテト','ナニヌネノ','ハヒフヘホ','マミムメモ','ヤユヨ','ラリルレロ','ワヲン'];
+const KATAKANA_ROW_NAMES = ['ア行(a)','カ行(ka)','サ行(sa)','タ行(ta)','ナ行(na)','ハ行(ha)','マ行(ma)','ヤ行(ya)','ラ行(ra)','ワ行(wa)'];
+
+// Japanese Words (Hiragana)
+const JP_WORDS_DATA = {
+  "いぬ":"inu 狗","ねこ":"neko 猫","とり":"tori 鸟","うま":"uma 马","さる":"saru 猴子",
+  "やま":"yama 山","かわ":"kawa 河","うみ":"umi 海","そら":"sora 天空","はな":"hana 花",
+  "みず":"mizu 水","ほん":"hon 书","くるま":"kuruma 车","いえ":"ie 家","まど":"mado 窗户",
+  "つくえ":"tsukue 桌子","いす":"isu 椅子","かばん":"kaban 包",
+  "あさ":"asa 早上","ひる":"hiru 中午","よる":"yoru 晚上","きょう":"kyou 今天","あした":"ashita 明天",
+  "たべる":"taberu 吃","のむ":"nomu 喝","みる":"miru 看","きく":"kiku 听","いく":"iku 去",
+  "おおきい":"ookii 大","ちいさい":"chiisai 小","あかい":"akai 红色的","しろい":"shiroi 白色的","あたらしい":"atarashii 新的"
+};
+
+// Japanese Words (Katakana loanwords)
+const JP_KATA_WORDS_DATA = {
+  "テレビ":"terebi 电视","カメラ":"kamera 相机","ホテル":"hoteru 酒店","レストラン":"resutoran 餐厅",
+  "バス":"basu 公交车","タクシー":"takushii 出租车","コーヒー":"koohii 咖啡","ジュース":"juusu 果汁",
+  "アイス":"aisu 冰淇淋","パン":"pan 面包","スーパー":"suupaa 超市","デパート":"depaato 百货商店",
+  "トイレ":"toire 洗手间","エレベーター":"erebeetaa 电梯","エスカレーター":"esukareetaa 自动扶梯",
+  "ゲーム":"geemu 游戏","テスト":"tesuto 测试","ノート":"nooto 笔记本","ペン":"pen 笔","メール":"meeru 邮件"
+};
+
+// Japanese Particles
+const JP_PARTICLES_DATA = {
+  "は(wa)":"主题 说到…… 哇","が":"主语 是…… 嘎","の":"的 诺","を":"动作对象 喔",
+  "に":"在/向/给/到 你","へ(e)":"往/向 诶","で":"在某地做/用 得","と":"和/跟/说 拖",
+  "も":"也 摸","か":"吗/疑问 卡"
+};
+
+// Bopomofo (注音符号)
+const BOPOMOFO_DATA = {
+  "ㄅ":"b","ㄆ":"p","ㄇ":"m","ㄈ":"f",
+  "ㄉ":"d","ㄊ":"t","ㄋ":"n","ㄌ":"l",
+  "ㄍ":"g","ㄎ":"k","ㄏ":"h",
+  "ㄐ":"j","ㄑ":"q","ㄒ":"x",
+  "ㄓ":"zh","ㄔ":"ch","ㄕ":"sh","ㄖ":"r",
+  "ㄗ":"z","ㄘ":"c","ㄙ":"s",
+  "ㄚ":"a","ㄛ":"o","ㄜ":"e","ㄝ":"ê",
+  "ㄞ":"ai","ㄟ":"ei","ㄠ":"ao","ㄡ":"ou",
+  "ㄢ":"an","ㄣ":"en","ㄤ":"ang","ㄥ":"eng","ㄦ":"er",
+  "ㄧ":"i/yi","ㄨ":"u/wu","ㄩ":"ü/yu"
+};
+const BOPOMOFO_ROWS = ['ㄅㄆㄇㄈ','ㄉㄊㄋㄌ','ㄍㄎㄏ','ㄐㄑㄒ','ㄓㄔㄕㄖ','ㄗㄘㄙ','ㄚㄛㄜㄝ','ㄞㄟㄠㄡ','ㄢㄣㄤㄥㄦ','ㄧㄨㄩ'];
+const BOPOMOFO_ROW_NAMES = ['声母 b组','声母 d组','声母 g组','声母 j组','声母 zh组','声母 z组','韵母 单韵','韵母 复韵','韵母 鼻韵','介母'];
+
+// Bopomofo Combinations
+const BOPOMOFO_COMBO_DATA = {
+  "ㄧㄚ":"ya","ㄧㄛ":"yo","ㄧㄝ":"ye","ㄧㄞ":"yai","ㄧㄠ":"yao",
+  "ㄧㄡ":"you","ㄧㄢ":"yan","ㄧㄣ":"yin","ㄧㄤ":"yang","ㄧㄥ":"ying",
+  "ㄨㄚ":"wa","ㄨㄛ":"wo","ㄨㄞ":"wai","ㄨㄟ":"wei",
+  "ㄨㄢ":"wan","ㄨㄣ":"wen","ㄨㄤ":"wang","ㄨㄥ":"weng",
+  "ㄩㄝ":"yue","ㄩㄢ":"yuan","ㄩㄣ":"yun","ㄩㄥ":"yong"
+};
+
+// Kids Numbers 0-10
+const KIDS_NUMBERS_DATA = {
+  "0":"🥚 零 Zero","1":"☝️ 一 One","2":"✌️ 二 Two","3":"🔱 三 Three",
+  "4":"🍀 四 Four","5":"🖐️ 五 Five","6":"🎲 六 Six","7":"🌈 七 Seven",
+  "8":"🐙 八 Eight","9":"🎈 九 Nine","10":"🔟 十 Ten"
+};
+
+// Kids Alphabet A-Z
+const KIDS_ABC_DATA = {
+  "A":"🍎 Apple 苹果","B":"🐻 Bear 熊","C":"🐱 Cat 猫","D":"🐶 Dog 狗",
+  "E":"🐘 Elephant 大象","F":"🐸 Frog 青蛙","G":"🍇 Grape 葡萄","H":"🐴 Horse 马",
+  "I":"🍦 Ice cream 冰淇淋","J":"🤹 Juggle 杂耍","K":"🪁 Kite 风筝","L":"🦁 Lion 狮子",
+  "M":"🐵 Monkey 猴子","N":"🌙 Night 夜晚","O":"🐙 Octopus 章鱼","P":"🐧 Penguin 企鹅",
+  "Q":"👸 Queen 女王","R":"🐇 Rabbit 兔子","S":"⭐ Star 星星","T":"🐯 Tiger 老虎",
+  "U":"☂️ Umbrella 雨伞","V":"🎻 Violin 小提琴","W":"🐳 Whale 鲸鱼","X":"🎄 Xmas tree 圣诞树",
+  "Y":"🪀 Yo-yo 溜溜球","Z":"🦓 Zebra 斑马"
+};
+
+// Built-in decks (not deletable)
+const BUILTIN = {
+  numbers: { name: '0-99 数字', data: NUMBER_DATA },
+  poker: { name: '扑克牌', data: POKER_DATA },
+  locations: { name: '地点编码', data: LOCATION_DATA },
+  hiragana: { name: '🇯🇵 平假名', data: HIRAGANA_DATA },
+  katakana: { name: '🇯🇵 片假名', data: KATAKANA_DATA },
+  jpwords: { name: '🇯🇵 日语词汇', data: JP_WORDS_DATA },
+  jpkatawords: { name: '🇯🇵 片假名词汇', data: JP_KATA_WORDS_DATA },
+  jpparticles: { name: '🇯🇵 助词', data: JP_PARTICLES_DATA },
+  bopomofo: { name: '🇹🇼 注音符号', data: BOPOMOFO_DATA },
+  bopomofocb: { name: '🇹🇼 注音组合', data: BOPOMOFO_COMBO_DATA },
+  kidsnumbers: { name: '👶 数字 0-10', data: KIDS_NUMBERS_DATA },
+  kidsabc: { name: '👶 字母 ABC', data: KIDS_ABC_DATA }
+};
+
+// ============================================================
+// STATE
+// ============================================================
+let currentDeckId = localStorage.getItem('mt_deck') || 'numbers';
+let currentPhase = parseInt(localStorage.getItem('mt_phase') || '1');
+let userDecks = JSON.parse(localStorage.getItem('mt_udecks') || '{}');
+let allCustom = JSON.parse(localStorage.getItem('mt_custom2') || '{}');
+let allWeak = JSON.parse(localStorage.getItem('mt_weak2') || '{}');
+let allStats = JSON.parse(localStorage.getItem('mt_stats2') || '{}');
+let todayPracticed = JSON.parse(localStorage.getItem('mt_practiced') || '{}');
+let allCardMastery = JSON.parse(localStorage.getItem('mt_card_mastery') || '{}');
+let hiddenDecks = JSON.parse(localStorage.getItem('mt_hidden_decks') || '[]');
+
+function isBuiltin(id) { return !!BUILTIN[id]; }
+function getDeckInfo(id) {
+  if (BUILTIN[id]) return BUILTIN[id];
+  if (userDecks[id]) return userDecks[id];
+  return null;
+}
+function getDeckData() {
+  const info = getDeckInfo(currentDeckId);
+  return info ? info.data : {};
+}
+function getAllCodes() { return Object.keys(getDeckData()); }
+function getCustom() { return allCustom[currentDeckId] || {}; }
+function getWeak() { return allWeak[currentDeckId] || {}; }
+function getStats() { return allStats[currentDeckId] || []; }
+
+function getName(code) {
+  const c = getCustom();
+  return c[code] || getDeckData()[code] || '?';
+}
+function formatCode(code) {
+  return code.replace(/([♥♦])/g, '<span class="suit-red">$1</span>');
+}
+
+function saveState() {
+  localStorage.setItem('mt_deck', currentDeckId);
+  localStorage.setItem('mt_phase', currentPhase);
+  localStorage.setItem('mt_udecks', JSON.stringify(userDecks));
+  localStorage.setItem('mt_custom2', JSON.stringify(allCustom));
+  localStorage.setItem('mt_weak2', JSON.stringify(allWeak));
+  localStorage.setItem('mt_stats2', JSON.stringify(allStats));
+  localStorage.setItem('mt_practiced', JSON.stringify(todayPracticed));
+  localStorage.setItem('mt_card_mastery', JSON.stringify(allCardMastery));
+  localStorage.setItem('mt_hidden_decks', JSON.stringify(hiddenDecks));
+}
+
+// Get today's practiced codes for current deck
+function getTodayPracticed() {
+  var key = currentDeckId;
+  var t = today();
+  if (!todayPracticed[key] || todayPracticed[key].date !== t) {
+    todayPracticed[key] = { date: t, codes: [] };
+  }
+  return todayPracticed[key].codes;
+}
+
+// Record codes as practiced today
+function recordPracticed(codes) {
+  var practiced = getTodayPracticed();
+  codes.forEach(function(c) {
+    if (practiced.indexOf(c) === -1) practiced.push(c);
+  });
+  saveState();
+}
+
+// Get remaining unpracticed codes for random mode
+function getUnpracticedCodes() {
+  var all = getAllCodes();
+  var practiced = getTodayPracticed();
+  return all.filter(function(c) { return practiced.indexOf(c) === -1; });
+}
+
+// Confusable pairs
+function getConfusable() {
+  if (currentDeckId === 'numbers') {
+    const pairs = [];
+    for (let i = 0; i < 10; i++) for (let j = i+1; j < 10; j++) {
+      const a = String(i)+String(j), b = String(j)+String(i);
+      if (NUMBER_DATA[a] && NUMBER_DATA[b]) pairs.push([a,b]);
+    }
+    return pairs;
+  }
+  if (currentDeckId === 'poker') {
+    const pairs = [];
+    for (const r of RANKS) for (let i = 0; i < 4; i++) for (let j = i+1; j < 4; j++)
+      pairs.push([SUITS[i]+r, SUITS[j]+r]);
+    return pairs;
+  }
+  if (currentDeckId === 'locations') {
+    // Same-station pairs (locations within the same group of 5)
+    const pairs = [];
+    for (let g = 0; g < LOCATION_GROUPS; g++) {
+      const base = g * 5 + 1;
+      for (let i = 0; i < 5; i++) for (let j = i+1; j < 5; j++)
+        pairs.push([String(base+i), String(base+j)]);
+    }
+    return pairs;
+  }
+  if (currentDeckId === 'kidsnumbers') {
+    // Pair nearby numbers for kids: (0,1),(2,3),(4,5)...
+    const pairs = [];
+    for (let i = 0; i <= 9; i += 2) pairs.push([String(i), String(i+1)]);
+    return pairs;
+  }
+  if (currentDeckId === 'kidsabc') {
+    const confPairs = [['B','D'],['M','N'],['P','Q'],['b','d'],['C','G'],['E','F'],['I','J'],['O','Q'],['U','V'],['W','M'],['X','Y'],['S','Z']];
+    return confPairs.filter(p => KIDS_ABC_DATA[p[0]] && KIDS_ABC_DATA[p[1]]);
+  }
+  if (currentDeckId === 'hiragana') {
+    return [['あ','お'],['い','り'],['う','ら'],['き','さ'],['し','つ'],['た','な'],['ぬ','め'],['ね','れ'],['は','ほ'],['わ','れ'],['く','へ'],['る','ろ']];
+  }
+  if (currentDeckId === 'katakana') {
+    return [['ア','マ'],['イ','ヰ'],['ウ','ワ'],['シ','ツ'],['ソ','ン'],['ク','タ'],['ヌ','ス'],['コ','ユ'],['ナ','メ'],['ネ','ヘ'],['ノ','メ'],['ル','レ']];
+  }
+  if (currentDeckId === 'jpwords') {
+    return [['みず','みる'],['いぬ','いえ'],['あさ','あした'],['やま','うま'],['かわ','かばん']];
+  }
+  if (currentDeckId === 'bopomofo') {
+    return [['ㄅ','ㄆ'],['ㄉ','ㄊ'],['ㄍ','ㄎ'],['ㄐ','ㄑ'],['ㄓ','ㄔ'],['ㄗ','ㄘ'],['ㄣ','ㄥ'],['ㄢ','ㄤ'],['ㄞ','ㄟ'],['ㄠ','ㄡ'],['ㄛ','ㄜ']];
+  }
+  if (currentDeckId === 'bopomofocb') {
+    return [['ㄧㄚ','ㄨㄚ'],['ㄧㄛ','ㄨㄛ'],['ㄧㄢ','ㄨㄢ'],['ㄧㄣ','ㄨㄣ'],['ㄧㄤ','ㄨㄤ'],['ㄧㄥ','ㄨㄥ']];
+  }
+  // Custom decks: no predefined confusable pairs
+  return [];
+}
+
+// Training state
+let deck = [], deckIndex = 0, revealed = false;
+let cardStartTime = 0, sessionStartTime = 0;
+let sessionCorrect = 0, sessionWrong = 0;
+let sessionTimes = [], sessionMissed = [];
+let lastMode = 'random', currentMode = '';
+let lastDeck = [];
+let sprintInterval = null;
+
+// ============================================================
+// WEAK ITEMS & STATS
+// ============================================================
+function addWeakItem(code) {
+  if (!allWeak[currentDeckId]) allWeak[currentDeckId] = {};
+  const w = allWeak[currentDeckId];
+  if (!w[code]) w[code] = { streak: 0, addedDate: today() }; else { w[code].streak = 0; if(!w[code].addedDate) w[code].addedDate = today(); }
+  saveState();
+}
+function markWeakCorrect(code) {
+  const w = allWeak[currentDeckId]; if (!w || !w[code]) return;
+  const t = today();
+  if ((w[code].lc||'') !== t) { w[code].streak = (w[code].streak||0)+1; w[code].lc = t; }
+  if (w[code].streak >= 3) delete w[code];
+  saveState();
+}
+function saveDailyStats(correct, wrong, avgTime) {
+  if (!allStats[currentDeckId]) allStats[currentDeckId] = [];
+  const s = allStats[currentDeckId], t = today();
+  let e = s.find(d => d.date===t);
+  if (!e) { e = {date:t,total:0,correct:0,wrong:0,totalTime:0}; s.push(e); }
+  e.total += correct+wrong; e.correct += correct; e.wrong += wrong;
+  e.totalTime += avgTime*(correct+wrong);
+  if (s.length > 30) allStats[currentDeckId] = s.slice(-30);
+  saveState();
+}
+function today() { return new Date().toISOString().slice(0,10); }
+function getTodayStats() { return (getStats()).find(d=>d.date===today()) || {total:0,correct:0,wrong:0}; }
+
+// ============================================================
+// DECK MANAGEMENT
+// ============================================================
+function getAllDeckIds() {
+  return [...Object.keys(BUILTIN), ...Object.keys(userDecks)].filter(id => hiddenDecks.indexOf(id) === -1);
+}
+function getAllDeckIdsIncludeHidden() {
+  return [...Object.keys(BUILTIN), ...Object.keys(userDecks)];
+}
+
+function renderTabs() {
+  const c = document.getElementById('deck-tabs');
+  c.innerHTML = '';
+  getAllDeckIds().forEach(id => {
+    const t = document.createElement('div');
+    t.className = 'deck-tab' + (id === currentDeckId ? ' active' : '');
+    t.textContent = getDeckInfo(id).name;
+    t.onclick = () => switchDeck(id);
+    let lpt = null;
+    t.addEventListener('touchstart', function(e) { lpt = setTimeout(function() { lpt = null; showTabMenu(id); }, 600); }, {passive:true});
+    t.addEventListener('touchend', function() { if(lpt){clearTimeout(lpt);lpt=null;} });
+    t.addEventListener('touchmove', function() { if(lpt){clearTimeout(lpt);lpt=null;} });
+    t.addEventListener('contextmenu', function(e) { e.preventDefault(); showTabMenu(id); });
+    c.appendChild(t);
+  });
+  const add = document.createElement('div');
+  add.className = 'deck-tab add-tab';
+  add.textContent = '+';
+  add.onclick = () => { document.getElementById('new-deck-name').value = ''; openModal('create-deck-modal'); };
+  c.appendChild(add);
+  if (hiddenDecks.length > 0) {
+    const restore = document.createElement('div');
+    restore.className = 'deck-tab add-tab';
+    restore.textContent = '👁';
+    restore.style.fontSize = '14px';
+    restore.onclick = () => showRestoreModal();
+    c.appendChild(restore);
+  }
+}
+
+function showTabMenu(id) {
+  const info = getDeckInfo(id);
+  if (!info) return;
+  if (confirm('隐藏「' + info.name + '」标签？\n（可通过 👁 按钮恢复）')) {
+    hiddenDecks.push(id);
+    localStorage.setItem('mt_hidden_decks', JSON.stringify(hiddenDecks));
+    if (currentDeckId === id) {
+      const visible = getAllDeckIds();
+      currentDeckId = visible.length ? visible[0] : 'numbers';
+    }
+    renderTabs();
+    updateHomeUI();
+  }
+}
+
+function showRestoreModal() {
+  const names = hiddenDecks.map(id => {
+    const b = BUILTIN[id]; const u = userDecks[id];
+    return (b ? b.name : u ? u.name : id);
+  });
+  const choice = prompt('输入要恢复的标签编号：\n' + hiddenDecks.map((id, i) => {
+    const b = BUILTIN[id]; const u = userDecks[id];
+    return (i+1) + '. ' + (b ? b.name : u ? u.name : id);
+  }).join('\n') + '\n\n输入 0 恢复全部');
+  if (choice === null) return;
+  const n = parseInt(choice);
+  if (n === 0) { hiddenDecks = []; }
+  else if (n >= 1 && n <= hiddenDecks.length) { hiddenDecks.splice(n-1, 1); }
+  else return;
+  localStorage.setItem('mt_hidden_decks', JSON.stringify(hiddenDecks));
+  renderTabs();
+  updateHomeUI();
+}
+
+function switchDeck(id) {
+  if (!getDeckInfo(id)) return;
+  currentDeckId = id;
+  saveState();
+  renderTabs();
+  updateHomeUI();
+}
+
+function createDeck() {
+  const name = document.getElementById('new-deck-name').value.trim();
+  if (!name) return;
+  const id = 'ud_' + Date.now();
+  userDecks[id] = { name, data: {} };
+  saveState();
+  closeModal('create-deck-modal');
+  switchDeck(id);
+}
+
+function deleteDeck() {
+  if (isBuiltin(currentDeckId)) return;
+  if (!confirm('确定删除「' + getDeckInfo(currentDeckId).name + '」？所有编码和训练记录将被删除。')) return;
+  delete userDecks[currentDeckId];
+  delete allCustom[currentDeckId];
+  delete allWeak[currentDeckId];
+  delete allStats[currentDeckId];
+  delete allCardMastery[currentDeckId];
+  currentDeckId = 'numbers';
+  saveState();
+  renderTabs();
+  showHome();
+}
+
+function showRenameDeckModal() {
+  document.getElementById('rename-deck-input').value = getDeckInfo(currentDeckId).name;
+  openModal('rename-deck-modal');
+}
+
+function renameDeck() {
+  const name = document.getElementById('rename-deck-input').value.trim();
+  if (!name || isBuiltin(currentDeckId)) return;
+  userDecks[currentDeckId].name = name;
+  saveState();
+  closeModal('rename-deck-modal');
+  renderTabs();
+}
+
+// ============================================================
+// CUSTOM DECK CODE MANAGEMENT
+// ============================================================
+function showAddCodeModal() {
+  document.getElementById('new-code-key').value = '';
+  document.getElementById('new-code-name').value = '';
+  openModal('add-code-modal');
+  setTimeout(() => document.getElementById('new-code-key').focus(), 100);
+}
+
+function addCodeToCustomDeck() {
+  const key = document.getElementById('new-code-key').value.trim();
+  const name = document.getElementById('new-code-name').value.trim();
+  if (!key || !name || isBuiltin(currentDeckId)) return;
+  userDecks[currentDeckId].data[key] = name;
+  saveState();
+  closeModal('add-code-modal');
+  showBrowse();
+}
+
+function deleteCodeFromCustomDeck(code) {
+  if (isBuiltin(currentDeckId)) return;
+  delete userDecks[currentDeckId].data[code];
+  if (allWeak[currentDeckId]) delete allWeak[currentDeckId][code];
+  if (allCustom[currentDeckId]) delete allCustom[currentDeckId][code];
+  saveState();
+  showBrowse();
+}
+
+// ============================================================
+// MODE SETTINGS
+// ============================================================
+const MODE_DEFAULTS = { random:20, reverse:15, confusable:40, sprint:10, weak:0, multi:10, sequence:10, sequential:0 };
+const MODE_NAMES = { random:'随机闪卡', reverse:'反向闪卡', confusable:'易混淆对', sprint:'冲刺挑战', weak:'弱项复习', multi:'多编码连读', sequence:'顺序记忆', sequential:'顺序练习' };
+let modeSettings = JSON.parse(localStorage.getItem('mt_mode_settings') || '{}');
+let pendingMode = '';
+
+function getModeCount(mode) {
+  var s = modeSettings[currentDeckId];
+  if (s && s[mode] && s[mode].count !== undefined) return s[mode].count;
+  return MODE_DEFAULTS[mode];
+}
+function getModeSelectedCodes(mode) {
+  var s = modeSettings[currentDeckId];
+  if (s && s[mode] && s[mode].selected) return s[mode].selected;
+  return null; // null = all codes
+}
+function saveModeSettings() {
+  localStorage.setItem('mt_mode_settings', JSON.stringify(modeSettings));
+}
+
+// Build code groups for the picker
+function getCodeGroups() {
+  if (currentDeckId === 'numbers') {
+    var groups = [];
+    for (var g = 0; g < 10; g++) {
+      var codes = [];
+      for (var i = g * 10; i < g * 10 + 10; i++) codes.push(String(i).padStart(2, '0'));
+      groups.push({ label: g + '0-' + g + '9', codes: codes });
+    }
+    return groups;
+  }
+  if (currentDeckId === 'poker') {
+    return [
+      { label: '♠ 黑桃', codes: RANKS.map(function(r){return '♠'+r;}) },
+      { label: '♥ 红桃', codes: RANKS.map(function(r){return '♥'+r;}) },
+      { label: '♣ 梅花', codes: RANKS.map(function(r){return '♣'+r;}) },
+      { label: '♦ 方片', codes: RANKS.map(function(r){return '♦'+r;}) },
+      { label: '王', codes: ['大王','小王'] }
+    ];
+  }
+  if (currentDeckId === 'locations') {
+    var groups = [];
+    for (var g = 0; g < LOCATION_GROUPS; g++) {
+      var base = g * 5 + 1, codes = [];
+      for (var i = 0; i < 5; i++) codes.push(String(base + i));
+      groups.push({ label: '地点组 ' + (g+1) + ' (' + base + '-' + (base+4) + ')', codes: codes });
+    }
+    return groups;
+  }
+  if (currentDeckId === 'kidsnumbers') {
+    return [{ label: '数字 0-10', codes: ['0','1','2','3','4','5','6','7','8','9','10'] }];
+  }
+  if (currentDeckId === 'kidsabc') {
+    return [{ label: '字母 A-Z', codes: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('') }];
+  }
+  if (currentDeckId === 'hiragana') {
+    return HIRAGANA_ROWS.map(function(row, i) {
+      return { label: HIRAGANA_ROW_NAMES[i], codes: row.split('') };
+    });
+  }
+  if (currentDeckId === 'katakana') {
+    return KATAKANA_ROWS.map(function(row, i) {
+      return { label: KATAKANA_ROW_NAMES[i], codes: row.split('') };
+    });
+  }
+  if (currentDeckId === 'jpwords') {
+    return [
+      { label: '动物', codes: ['いぬ','ねこ','とり','うま','さる'] },
+      { label: '自然', codes: ['やま','かわ','うみ','そら','はな','みず'] },
+      { label: '物品', codes: ['ほん','くるま','いえ','まど','つくえ','いす','かばん'] },
+      { label: '时间', codes: ['あさ','ひる','よる','きょう','あした'] },
+      { label: '动词', codes: ['たべる','のむ','みる','きく','いく'] },
+      { label: '形容词', codes: ['おおきい','ちいさい','あかい','しろい','あたらしい'] }
+    ];
+  }
+  if (currentDeckId === 'jpkatawords') {
+    return [
+      { label: '媒体/电器', codes: ['テレビ','カメラ','ゲーム','テスト','ノート','ペン','メール'] },
+      { label: '交通/场所', codes: ['ホテル','レストラン','バス','タクシー','トイレ','エレベーター','エスカレーター','スーパー','デパート'] },
+      { label: '食物', codes: ['コーヒー','ジュース','アイス','パン'] }
+    ];
+  }
+  if (currentDeckId === 'jpparticles') {
+    return [{ label: '全部助词', codes: Object.keys(JP_PARTICLES_DATA) }];
+  }
+  if (currentDeckId === 'bopomofo') {
+    return BOPOMOFO_ROWS.map(function(row, i) {
+      return { label: BOPOMOFO_ROW_NAMES[i], codes: row.split('') };
+    });
+  }
+  if (currentDeckId === 'bopomofocb') {
+    return [
+      { label: 'ㄧ系列(i)', codes: Object.keys(BOPOMOFO_COMBO_DATA).filter(k=>k.startsWith('ㄧ')) },
+      { label: 'ㄨ系列(u)', codes: Object.keys(BOPOMOFO_COMBO_DATA).filter(k=>k.startsWith('ㄨ')) },
+      { label: 'ㄩ系列(ü)', codes: Object.keys(BOPOMOFO_COMBO_DATA).filter(k=>k.startsWith('ㄩ')) }
+    ];
+  }
+  // Custom deck: single group
+  return [{ label: '全部编码', codes: getAllCodes() }];
+}
+
+function renderCodePicker(mode) {
+  var picker = document.getElementById('code-picker');
+  picker.innerHTML = '';
+  var groups = getCodeGroups();
+  var selected = getModeSelectedCodes(mode);
+  var allCodes = getAllCodes();
+
+  groups.forEach(function(group, gi) {
+    var div = document.createElement('div');
+    div.className = 'picker-group';
+
+    // Group header with checkbox
+    var header = document.createElement('div');
+    header.className = 'picker-group-header';
+    var gCheck = document.createElement('input');
+    gCheck.type = 'checkbox';
+    gCheck.id = 'pg-' + gi;
+    gCheck.dataset.group = gi;
+    var gLabel = document.createElement('span');
+    gLabel.textContent = group.label;
+    header.appendChild(gCheck);
+    header.appendChild(gLabel);
+    header.onclick = function(e) { if (e.target !== gCheck) gCheck.click(); };
+    div.appendChild(header);
+
+    // Individual items
+    var items = document.createElement('div');
+    items.className = 'picker-items';
+    group.codes.forEach(function(code) {
+      if (allCodes.indexOf(code) === -1) return;
+      var item = document.createElement('div');
+      item.className = 'picker-item';
+      var cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.value = code;
+      cb.className = 'code-cb';
+      cb.dataset.group = gi;
+      cb.checked = selected ? selected.indexOf(code) !== -1 : true;
+      cb.onchange = function() { syncGroupCheck(gi); };
+      var lb = document.createElement('label');
+      lb.textContent = code + ' ' + getName(code);
+      lb.onclick = function() { cb.click(); };
+      item.appendChild(cb);
+      item.appendChild(lb);
+      items.appendChild(item);
+    });
+    div.appendChild(items);
+    picker.appendChild(div);
+
+    // Group checkbox logic
+    gCheck.onchange = function() {
+      var cbs = items.querySelectorAll('.code-cb');
+      cbs.forEach(function(cb) { cb.checked = gCheck.checked; });
+    };
+    syncGroupCheck(gi);
+  });
+}
+
+function syncGroupCheck(gi) {
+  var gCheck = document.getElementById('pg-' + gi);
+  if (!gCheck) return;
+  var cbs = document.querySelectorAll('.code-cb[data-group="' + gi + '"]');
+  var all = true, none = true;
+  cbs.forEach(function(cb) { if (cb.checked) none = false; else all = false; });
+  gCheck.checked = all;
+  gCheck.indeterminate = !all && !none;
+}
+
+function pickerSelectAll(val) {
+  document.querySelectorAll('.code-cb').forEach(function(cb) { cb.checked = val; });
+  document.querySelectorAll('.picker-group-header input').forEach(function(cb) { cb.checked = val; cb.indeterminate = false; });
+}
+
+function getPickerSelected() {
+  var selected = [];
+  document.querySelectorAll('.code-cb:checked').forEach(function(cb) { selected.push(cb.value); });
+  return selected;
+}
+
+function getModeRepeat(mode) {
+  var s = modeSettings[currentDeckId];
+  if (s && s[mode] && s[mode].repeat !== undefined) return s[mode].repeat;
+  return false;
+}
+
+function openModeSettings(mode) {
+  pendingMode = mode;
+  var title = MODE_NAMES[mode] || mode;
+  document.getElementById('mode-settings-title').textContent = title + ' 设置';
+
+  // Count
+  var countInput = document.getElementById('mode-count-input');
+  var countHint = document.getElementById('mode-count-hint');
+  if (mode === 'weak') {
+    var wkLen = Object.keys(getWeak()).length;
+    countInput.value = getModeCount(mode) || wkLen || 0;
+    countHint.textContent = '当前弱项 ' + wkLen + ' 个（0 = 全部）';
+  } else if (mode === 'sequential') {
+    countInput.value = getModeCount(mode);
+    countHint.textContent = '0 = 全部按顺序练习';
+  } else {
+    countInput.value = getModeCount(mode);
+    countHint.textContent = '默认 ' + MODE_DEFAULTS[mode] + ' 题';
+  }
+
+  // Repeat toggle (hide for sequential mode)
+  var repeatRow = document.getElementById('setting-repeat-row');
+  var repeatToggle = document.getElementById('mode-repeat-toggle');
+  repeatRow.style.display = mode === 'sequential' ? 'none' : '';
+  repeatToggle.checked = getModeRepeat(mode);
+
+  // Code picker
+  renderCodePicker(mode);
+  document.getElementById('setting-range-row').style.display = '';
+
+  openModal('mode-settings-modal');
+}
+
+function confirmModeStart() {
+  var mode = pendingMode;
+  var count = parseInt(document.getElementById('mode-count-input').value) || MODE_DEFAULTS[mode];
+  var selected = getPickerSelected();
+  var allCodes = getAllCodes();
+  var selVal = selected.length === allCodes.length ? null : selected;
+  var repeat = document.getElementById('mode-repeat-toggle').checked;
+
+  if (!modeSettings[currentDeckId]) modeSettings[currentDeckId] = {};
+  modeSettings[currentDeckId][mode] = { count: count, selected: selVal, repeat: repeat };
+  saveModeSettings();
+  closeModal('mode-settings-modal');
+  if (mode === 'sequence') {
+    startSequenceMode();
+  } else {
+    startMode(mode);
+  }
+}
+
+function getFilteredCodes() {
+  var codes = getAllCodes();
+  var selected = getModeSelectedCodes(currentMode || pendingMode);
+  if (selected) {
+    codes = codes.filter(function(c) { return selected.indexOf(c) !== -1; });
+  }
+  return codes;
+}
+
+// ============================================================
+// CARD MASTERY & FRICTION
+// ============================================================
+function getCardMastery(deckId, code) {
+  if (!allCardMastery[deckId]) allCardMastery[deckId] = {};
+  if (!allCardMastery[deckId][code]) {
+    allCardMastery[deckId][code] = {
+      level: 0, successStreak: 0, failStreak: 0,
+      lastReview: null, nextReview: null,
+      firstSeen: true, revealTooFast: false
+    };
+  }
+  return allCardMastery[deckId][code];
+}
+
+function updateCardMastery(code, result) {
+  var m = getCardMastery(currentDeckId, code);
+  if (result === 'remember') {
+    m.level = Math.min(3, m.level + 1);
+    m.successStreak = (m.successStreak || 0) + 1;
+    m.failStreak = 0;
+  } else if (result === 'vague') {
+    // level unchanged
+    m.successStreak = 0;
+    m.failStreak = 0;
+  } else if (result === 'dont_know') {
+    m.level = Math.max(0, m.level - 1);
+    m.failStreak = (m.failStreak || 0) + 1;
+    m.successStreak = 0;
+  }
+  if (m.firstSeen && result !== 'dont_know') m.firstSeen = false;
+  m.lastReview = today();
+  // Simple spaced repetition: next review based on level
+  var days = [1, 1, 3, 7][m.level] || 1;
+  var next = new Date();
+  next.setDate(next.getDate() + days);
+  m.nextReview = next.toISOString().slice(0, 10);
+  saveState();
+}
+
+function getFrictionLevel(code) {
+  // Sprint mode: always F0
+  if (currentMode === 'sprint') return 0;
+  var m = getCardMastery(currentDeckId, code);
+  // Brand new card: F0
+  if (m.firstSeen) return 0;
+  // Base friction
+  var friction;
+  if (m.level === 3 && m.failStreak === 0) friction = 0;
+  else if (m.level === 2) friction = 1;
+  else friction = 2; // level 0 (non-first) or level 1
+  // Behavior adjustments
+  if (m.failStreak >= 2) friction = Math.min(2, friction + 1);
+  if (m.revealTooFast) friction = Math.min(2, friction + 1);
+  if (m.lastReview) {
+    var daysSince = Math.floor((Date.now() - new Date(m.lastReview).getTime()) / 86400000);
+    if (daysSince >= 7) friction = Math.min(2, friction + 1);
+  }
+  return friction;
+}
+
+function getDeckMasteryDist() {
+  var dist = [0, 0, 0, 0]; // New/Hard, Hard, Medium, Easy
+  var deckMastery = allCardMastery[currentDeckId];
+  if (!deckMastery) return dist;
+  var codes = getAllCodes();
+  codes.forEach(function(c) {
+    var m = deckMastery[c];
+    if (m) dist[m.level] = (dist[m.level] || 0) + 1;
+  });
+  return dist;
+}
+
+// Friction state variables
+var f1Timer = null;
+var f1CountdownVal = 0;
+var currentFriction = 0;
+var lockInTimer = null;
+var judgeReady = false;
+var touchHandledFriction = false;
+
+// ============================================================
+// DECK BUILDING & TRAINING
+// ============================================================
+function shuffle(a) { const b=[...a]; for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];} return b; }
+function pickRandom(a,n) {
+  if (!a.length) return [];
+  if (n <= a.length) return shuffle(a).slice(0, n);
+  // Need more cards than available: cycle through multiple rounds
+  var result = [];
+  while (result.length < n) result = result.concat(shuffle(a));
+  return result.slice(0, n);
+}
+function pickWithRepeat(a,n) {
+  if (!a.length) return [];
+  var result = [];
+  for (var i = 0; i < n; i++) result.push(a[Math.floor(Math.random()*a.length)]);
+  return result;
+}
+function pickCodes(a,n,allowRepeat) { return allowRepeat ? pickWithRepeat(a,n) : pickRandom(a,n); }
+
+function buildDeck(mode) {
+  const codes = getFilteredCodes(), weak = getWeak(), count = getModeCount(mode);
+  const rep = getModeRepeat(mode);
+  switch(mode) {
+    case 'random': {
+      return pickCodes(codes, count, rep).map(c=>({type:'forward',codes:[c]}));
+    }
+    case 'reverse': return pickCodes(codes, count, rep).map(c=>({type:'reverse',codes:[c]}));
+    case 'confusable': {
+      var confPairs = getConfusable().filter(function(p) {
+        return codes.indexOf(p[0]) !== -1 && codes.indexOf(p[1]) !== -1;
+      });
+      const pairCount = Math.ceil(count / 4);
+      const pairs = pickRandom(confPairs, pairCount), cards = [];
+      pairs.forEach(([a,b])=>{cards.push({type:'forward',codes:[a]});cards.push({type:'forward',codes:[b]});cards.push({type:'forward',codes:[a]});cards.push({type:'forward',codes:[b]});});
+      return cards;
+    }
+    case 'sprint': return pickCodes(codes, count, rep).map(c=>({type:'sprint',codes:[c]}));
+    case 'weak': {
+      const wk=Object.keys(weak).filter(function(c) { return codes.indexOf(c) !== -1; });
+      if(!wk.length) return [];
+      var targetCount = count > 0 ? count : wk.length * 2;
+      var result = [];
+      while (result.length < targetCount) result = result.concat(shuffle(wk));
+      result = result.slice(0, targetCount);
+      return result.map(c=>({type:'forward',codes:[c]}));
+    }
+    case 'multi': {
+      const gs=currentPhase>=4?3:2, cards=[];
+      for(let i=0;i<count;i++) cards.push({type:'multi',codes:pickRandom(codes,gs)});
+      return cards;
+    }
+    case 'sequential': {
+      // In-order practice: cycle through in order, count 0 = all once
+      var ordered = codes.slice();
+      if (count > 0 && count > ordered.length) {
+        var result = [];
+        while (result.length < count) result = result.concat(codes.slice());
+        ordered = result.slice(0, count);
+      } else if (count > 0) {
+        ordered = ordered.slice(0, count);
+      }
+      return ordered.map(c=>({type:'forward',codes:[c]}));
+    }
+    default: return [];
+  }
+}
+
+function startMode(mode) {
+  const codes = getFilteredCodes();
+  if (!codes.length) { alert('当前范围内没有编码'); return; }
+  if (mode==='multi'&&currentPhase<3) { alert('Phase 3+ 解锁'); return; }
+  if (mode==='weak'&&!Object.keys(getWeak()).length) { alert('没有弱项'); return; }
+  if (mode==='confusable'&&!getConfusable().length) { alert('当前类型无混淆对'); return; }
+  currentMode=mode; lastMode=mode;
+  deck=buildDeck(mode); if(!deck.length) return;
+  lastDeck=deck.map(function(c){return{type:c.type,codes:c.codes.slice()};});
+  deckIndex=0;sessionCorrect=0;sessionWrong=0;sessionVague=0;sessionTimes=[];sessionMissed=[];sessionStartTime=Date.now();
+  showScreen('training'); showCurrentCard();
+}
+
+function replayLastDeck() {
+  if(!lastDeck.length){startMode(lastMode);return;}
+  currentMode=lastMode;
+  deck=shuffle(lastDeck.map(function(c){return{type:c.type,codes:c.codes.slice()};}));
+  deckIndex=0;sessionCorrect=0;sessionWrong=0;sessionVague=0;sessionTimes=[];sessionMissed=[];sessionStartTime=Date.now();
+  showScreen('training'); showCurrentCard();
+}
+
+// 卡住的卡片再来一轮 - 只重练本轮答错的卡片
+function replayMissedCards() {
+  const missedCodes = [...new Set(sessionMissed)];
+  if (!missedCodes.length) return;
+  currentMode = lastMode;
+  // 每个卡住的编码出现两次（加深印象），然后打乱
+  deck = shuffle(missedCodes.flatMap(function(c) {
+    const cardType = lastDeck.length && lastDeck[0].type ? lastDeck[0].type : 'forward';
+    return [{type: cardType, codes: [c]}, {type: cardType, codes: [c]}];
+  }));
+  lastDeck = deck.map(function(c){return{type:c.type,codes:c.codes.slice()};});
+  deckIndex = 0; sessionCorrect = 0; sessionWrong = 0; sessionVague = 0;
+  sessionTimes = []; sessionMissed = []; sessionStartTime = Date.now();
+  showScreen('training'); showCurrentCard();
+}
+
+// 今日弱项复习 - 只练今天新增的弱项
+function startTodayWeakReview() {
+  const weak = getWeak();
+  const t = today();
+  const todayWeakCodes = Object.keys(weak).filter(function(c) {
+    return weak[c].addedDate === t;
+  }).filter(function(c) {
+    return getFilteredCodes().indexOf(c) !== -1;
+  });
+  if (!todayWeakCodes.length) { alert('今天还没有新增弱项'); return; }
+  currentMode = 'weak'; lastMode = 'weak';
+  // 每个弱项出现两次，打乱顺序
+  deck = shuffle(todayWeakCodes.flatMap(function(c) {
+    return [{type:'forward',codes:[c]},{type:'forward',codes:[c]}];
+  }));
+  lastDeck = deck.map(function(c){return{type:c.type,codes:c.codes.slice()};});
+  deckIndex = 0; sessionCorrect = 0; sessionWrong = 0; sessionVague = 0;
+  sessionTimes = []; sessionMissed = []; sessionStartTime = Date.now();
+  showScreen('training'); showCurrentCard();
+}
+
+// 获取今日弱项数量
+function getTodayWeakCount() {
+  const weak = getWeak();
+  const t = today();
+  return Object.keys(weak).filter(function(c) { return weak[c].addedDate === t; }).length;
+}
+
+// 弱项复习结束后的总结面板
+function renderWeakReviewSummary() {
+  const el = document.getElementById('sum-weak-review');
+  if (currentMode !== 'weak') { el.style.display = 'none'; return; }
+  const weak = getWeak();
+  const weakCodes = Object.keys(weak).filter(function(c) {
+    return getFilteredCodes().indexOf(c) !== -1;
+  });
+  if (!weakCodes.length) {
+    el.style.display = '';
+    el.innerHTML = '<div class="wr-cleared">🎉 太棒了！所有弱项已清除！</div>';
+    return;
+  }
+  el.style.display = '';
+  let html = '<h3>当前弱项总结（' + weakCodes.length + ' 个）</h3>';
+  weakCodes.forEach(function(c) {
+    const w = weak[c];
+    const streakText = w.streak > 0 ? '连续正确 ' + w.streak + '/3' : '未开始';
+    html += '<div class="wr-item">' +
+      '<span class="wr-code">' + c + ' → ' + getName(c) + '</span>' +
+      '<span class="wr-streak">' + streakText + '</span>' +
+      '<button class="wr-remove" onclick="removeWeakItem(\'' + c.replace(/'/g,"\\'") + '\')">不再是弱项</button>' +
+    '</div>';
+  });
+  el.innerHTML = html;
+}
+
+// 从弱项中移除
+function removeWeakItem(code) {
+  const w = allWeak[currentDeckId];
+  if (w && w[code]) {
+    delete w[code];
+    saveState();
+    renderWeakReviewSummary();
+  }
+}
+
+function showCurrentCard() {
+  if(deckIndex>=deck.length){finishSession();return;}
+  var card=deck[deckIndex]; revealed=false; judgeReady=false;
+  document.getElementById('think-time-hint').style.display='none';
+  // Clear F1 timer and lock-in timer
+  if (f1Timer) { clearInterval(f1Timer); f1Timer = null; }
+  if (lockInTimer) { clearTimeout(lockInTimer); lockInTimer = null; }
+  var p=document.getElementById('card-prompt'),a=document.getElementById('card-answer');
+  a.style.transition='none';
+  a.classList.remove('visible');
+  a.classList.remove('answer-fade');
+  a.textContent='';
+  a.offsetHeight;
+  a.style.transition='';
+  document.getElementById('tap-hint').style.display='';
+  document.getElementById('train-controls').style.display='';
+  document.getElementById('judge-controls').style.display='none';
+  document.getElementById('f2-controls').style.display='none';
+  document.getElementById('f1-countdown').textContent='';
+  document.getElementById('train-progress').textContent=(deckIndex+1)+' / '+deck.length;
+  var isKids = currentDeckId==='kidsnumbers'||currentDeckId==='kidsabc'||currentDeckId==='hiragana'||currentDeckId==='katakana'||currentDeckId==='jpwords'||currentDeckId==='jpkatawords'||currentDeckId==='jpparticles'||currentDeckId==='bopomofo'||currentDeckId==='bopomofocb';
+  var cardEl = p.closest('.card');
+  if(cardEl) cardEl.classList.toggle('kids-card', isKids);
+  if(card.type==='reverse'){p.innerHTML=getName(card.codes[0]);p.className='number';p.style.fontSize='48px';a.textContent=card.codes[0];}
+  else if(card.type==='multi'){p.innerHTML=card.codes.map(formatCode).join('&nbsp;&nbsp;');p.className='number multi';p.style.fontSize='';a.textContent=card.codes.map(function(c){return getName(c);}).join(' + ');}
+  else{p.innerHTML=formatCode(card.codes[0]);p.className='number';p.style.fontSize='';a.textContent=getName(card.codes[0]);}
+  var sb=document.getElementById('sprint-bar');
+  if(card.type==='sprint'){var tl=currentPhase===1?3000:currentPhase===2?2000:1500;startSprintTimer(tl);sb.style.display='';}
+  else{sb.style.display='none';stopSprintTimer();}
+  // Determine friction level
+  var mainCode = card.codes[0];
+  currentFriction = getFrictionLevel(mainCode);
+  var revealBtn = document.getElementById('btn-reveal-main');
+  if (currentFriction === 2) {
+    // F2: hide normal reveal, show two-button choice
+    document.getElementById('train-controls').style.display='none';
+    document.getElementById('f2-controls').style.display='flex';
+    document.getElementById('f1-countdown').textContent='在心中完整说出答案。';
+    document.getElementById('tap-hint').style.display='none';
+  } else if (currentFriction === 1) {
+    // F1: show reveal button but disabled, start countdown
+    revealBtn.classList.add('disabled');
+    revealBtn.textContent='请思考...';
+    revealBtn.onclick = null;
+    document.getElementById('tap-hint').style.display='none';
+    f1CountdownVal = 3;
+    document.getElementById('f1-countdown').textContent='在心中说出答案... '+f1CountdownVal+'s';
+    f1Timer = setInterval(function() {
+      f1CountdownVal--;
+      if (f1CountdownVal <= 0) {
+        clearInterval(f1Timer); f1Timer = null;
+        document.getElementById('f1-countdown').textContent='';
+        revealBtn.classList.remove('disabled');
+        revealBtn.textContent='翻牌 (空格)';
+        revealBtn.onclick = function() { revealCard(); };
+      } else {
+        document.getElementById('f1-countdown').textContent='在心中说出答案... '+f1CountdownVal+'s';
+      }
+    }, 1000);
+  } else {
+    // F0: normal behavior
+    revealBtn.classList.remove('disabled');
+    revealBtn.textContent='翻牌 (空格)';
+    revealBtn.onclick = function() { revealCard(); };
+  }
+  cardStartTime=Date.now();updateTimer();
+}
+
+function revealCard(){
+  if(revealed)return;
+  // F1 block: if countdown still active, ignore
+  if(currentFriction===1 && f1Timer) return;
+  revealed=true;
+  // Track revealTooFast
+  var thinkTime=(Date.now()-cardStartTime)/1000;
+  var card=deck[deckIndex];
+  if(card && card.codes){
+    card.codes.forEach(function(c){
+      var m=getCardMastery(currentDeckId,c);
+      m.revealTooFast = thinkTime < 1;
+    });
+  }
+  var answerEl=document.getElementById('card-answer');
+  document.getElementById('tap-hint').style.display='none';
+  document.getElementById('train-controls').style.display='none';
+  document.getElementById('f2-controls').style.display='none';
+  stopSprintTimer();
+  if(f1Timer){clearInterval(f1Timer);f1Timer=null;}
+  // Determine lock-in delay
+  var isSprint = currentMode === 'sprint';
+  var lockDelay = 0;
+  var lockMsg = '';
+  if (isSprint) {
+    lockDelay = 0;
+  } else if (currentFriction === 0) {
+    lockDelay = 500;
+    lockMsg = '在心中确认你的答案...';
+  } else if (currentFriction === 1) {
+    lockDelay = 1000;
+    lockMsg = '在心中锁定你的答案，不要改变...';
+  } else if (currentFriction === 2) {
+    lockDelay = 1500;
+    lockMsg = '在心中锁定你的答案，不要改变...';
+  }
+  var thinkTime = (Date.now() - cardStartTime) / 1000;
+  if (lockDelay === 0) {
+    // Sprint or no delay: show answer immediately
+    document.getElementById('f1-countdown').textContent='';
+    answerEl.classList.add('visible');
+    judgeReady=true;
+    showJudgeWithSuggestion(thinkTime);
+  } else {
+    // Lock-in phase: keep answer hidden (blurred), show lock-in message
+    answerEl.classList.remove('visible');
+    document.getElementById('f1-countdown').innerHTML='<span class="lock-in-msg">'+lockMsg+'</span>';
+    document.getElementById('judge-controls').style.display='none';
+    lockInTimer = setTimeout(function(){
+      lockInTimer = null;
+      document.getElementById('f1-countdown').textContent='';
+      // Blur to clear transition
+      answerEl.classList.add('visible');
+      judgeReady=true;
+      showJudgeWithSuggestion(thinkTime);
+    }, lockDelay);
+  }
+}
+
+function showJudgeWithSuggestion(thinkTime) {
+  var hint = document.getElementById('think-time-hint');
+  var btnR = document.getElementById('btn-judge-remember');
+  var btnV = document.getElementById('btn-judge-vague');
+  var btnD = document.getElementById('btn-judge-dont');
+  // Reset styles
+  btnR.style.boxShadow=''; btnV.style.boxShadow=''; btnD.style.boxShadow='';
+  btnR.style.transform=''; btnV.style.transform=''; btnD.style.transform='';
+  var suggested = '';
+  if (thinkTime < 2) {
+    suggested = 'remember';
+    hint.innerHTML = '⚡ ' + thinkTime.toFixed(1) + '秒 — 秒答';
+  } else if (thinkTime < 5) {
+    suggested = 'vague';
+    hint.innerHTML = '🤔 ' + thinkTime.toFixed(1) + '秒 — 想了一会儿';
+  } else {
+    suggested = 'dont_know';
+    hint.innerHTML = '😅 ' + thinkTime.toFixed(1) + '秒 — 花了较长时间';
+  }
+  hint.style.display = '';
+  // Highlight suggested button
+  var highlightBtn = suggested === 'remember' ? btnR : suggested === 'vague' ? btnV : btnD;
+  highlightBtn.style.boxShadow = '0 0 12px rgba(74,158,255,0.6)';
+  highlightBtn.style.transform = 'scale(1.05)';
+  document.getElementById('judge-controls').style.display = '';
+}
+
+function f2Know(){
+  // User claims they know it - reveal answer with lock-in phase
+  revealCard();
+}
+function f2DontKnow(){
+  // User admits they don't know - reveal immediately, no lock-in, auto-judge
+  if(revealed)return;
+  revealed=true;
+  var thinkTime=(Date.now()-cardStartTime)/1000;
+  var card=deck[deckIndex];
+  if(card && card.codes){
+    card.codes.forEach(function(c){
+      var m=getCardMastery(currentDeckId,c);
+      m.revealTooFast = thinkTime < 1;
+    });
+  }
+  var answerEl=document.getElementById('card-answer');
+  answerEl.style.transition='opacity 0.2s';
+  answerEl.classList.add('visible');
+  document.getElementById('tap-hint').style.display='none';
+  document.getElementById('f2-controls').style.display='none';
+  document.getElementById('f1-countdown').textContent='';
+  stopSprintTimer();
+  // Auto-judge as dont_know (no self-eval buttons needed)
+  judgeReady=true;
+  judgeCard('dont_know');
+}
+
+// Session vague count
+var sessionVague = 0;
+
+function judgeCard(result){
+  if(!revealed)return;
+  sessionTimes.push((Date.now()-cardStartTime)/1000);
+  var card=deck[deckIndex];
+  if(result==='remember'){
+    sessionCorrect++;
+    card.codes.forEach(function(c){markWeakCorrect(c);updateCardMastery(c,'remember');});
+  } else if(result==='vague'){
+    sessionVague++;
+    card.codes.forEach(function(c){updateCardMastery(c,'vague');});
+    // vague: don't add/remove weak items
+  } else {
+    // dont_know
+    sessionWrong++;
+    card.codes.forEach(function(c){
+      addWeakItem(c);
+      sessionMissed.push(c);
+      updateCardMastery(c,'dont_know');
+    });
+  }
+  deckIndex++;showCurrentCard();
+}
+
+function finishSession(){stopSprintTimer();if(f1Timer){clearInterval(f1Timer);f1Timer=null;}
+  var tt=(Date.now()-sessionStartTime)/1000,avg=sessionTimes.length?sessionTimes.reduce(function(a,b){return a+b;},0)/sessionTimes.length:0;
+  saveDailyStats(sessionCorrect,sessionWrong+sessionVague,avg);updateStreak();
+  document.getElementById('sum-correct').textContent=sessionCorrect;
+  document.getElementById('sum-wrong').textContent=sessionWrong;
+  document.getElementById('sum-avg').textContent=avg.toFixed(1)+'s';
+  document.getElementById('sum-total').textContent=tt.toFixed(1)+'s';
+  var wd=document.getElementById('sum-weak'),wi=document.getElementById('sum-weak-items');
+  if(sessionMissed.length){wd.style.display='';var missed=[].concat(sessionMissed.filter(function(v,i,a){return a.indexOf(v)===i;}));wi.innerHTML=missed.map(function(c){return '<span class="item">'+c+' \u2192 '+getName(c)+'</span>';}).join('');}else{wd.style.display='none';}
+  // 显示/隐藏 "卡住再来一轮" 按钮
+  var missedBtn=document.getElementById('btn-replay-missed');
+  if(sessionMissed.length){missedBtn.style.display='';var missedUnique=sessionMissed.filter(function(v,i,a){return a.indexOf(v)===i;});missedBtn.textContent='卡住的再来（'+missedUnique.length+'张）';}else{missedBtn.style.display='none';}
+  // Mastery distribution
+  renderMasteryDist();
+  // 弱项复习结束时显示弱项总结
+  renderWeakReviewSummary();
+  var title = sessionMissed.length===0 && sessionVague===0 ? '全部正确！' : (sessionMissed.length===0 ? '训练完成' : '训练完成');
+  document.getElementById('summary-title').textContent=title;showScreen('summary');
+}
+
+function renderMasteryDist(){
+  var el=document.getElementById('sum-mastery-dist');
+  var dist=getDeckMasteryDist();
+  var total=dist[0]+dist[1]+dist[2]+dist[3];
+  if(total===0){el.style.display='none';return;}
+  el.style.display='';
+  var labels=['New','Hard','Medium','Easy'];
+  var cls=['m-new','m-hard','m-med','m-easy'];
+  var html='<div style="font-size:13px;color:#888;margin-bottom:8px;text-align:center;">掌握程度分布</div><div class="mastery-dist">';
+  for(var i=0;i<4;i++){
+    html+='<div class="m-item"><div class="m-val '+cls[i]+'">'+dist[i]+'</div><div class="m-lbl">'+labels[i]+'</div></div>';
+  }
+  html+='</div>';
+  if(sessionVague>0){html+='<div style="text-align:center;margin-top:8px;font-size:13px;color:#ff9f43;">模糊: '+sessionVague+' 张</div>';}
+  el.innerHTML=html;
+}
+
+function endTraining(){stopSprintTimer();if(f1Timer){clearInterval(f1Timer);f1Timer=null;}if(deckIndex>0){var avg=sessionTimes.length?sessionTimes.reduce(function(a,b){return a+b;},0)/sessionTimes.length:0;saveDailyStats(sessionCorrect,sessionWrong+sessionVague,avg);}showHome();}
+
+function startSprintTimer(ms){stopSprintTimer();const fill=document.getElementById('sprint-fill');fill.style.width='100%';fill.className='fill';const st=Date.now();sprintInterval=setInterval(()=>{const p=Math.max(0,1-(Date.now()-st)/ms)*100;fill.style.width=p+'%';fill.className=p<20?'fill danger':p<50?'fill warning':'fill';if(Date.now()-st>=ms){stopSprintTimer();revealCard();}},50);}
+function stopSprintTimer(){if(sprintInterval){clearInterval(sprintInterval);sprintInterval=null;}}
+
+let timerRAF;
+function updateTimer(){const el=document.getElementById('train-timer');function tick(){if(document.getElementById('screen-training').style.display==='none')return;el.textContent=((Date.now()-cardStartTime)/1000).toFixed(1)+'s';timerRAF=requestAnimationFrame(tick);}cancelAnimationFrame(timerRAF);tick();}
+
+// ============================================================
+// SCREENS
+// ============================================================
+function showScreen(name){['home','training','summary','browse','stats','seq-memorize','seq-recall'].forEach(s=>{document.getElementById('screen-'+s).style.display=s===name?'block':'none';});document.getElementById('deck-tabs').style.display=name==='home'?'':'none';}
+function showHome(){showScreen('home');updateHomeUI();}
+
+function updateHomeUI(){
+  const ts=getTodayStats(),codes=getAllCodes();
+  document.getElementById('home-today-count').textContent=ts.total;
+  document.getElementById('home-accuracy').textContent=ts.total>0?Math.round(ts.correct/ts.total*100)+'%':'-';
+  document.getElementById('home-weak-count').textContent=Object.keys(getWeak()).length;
+  document.getElementById('phase-display').textContent=currentPhase;
+  checkStreakDisplay();
+  // Empty state
+  const empty = codes.length === 0;
+  document.getElementById('home-empty').style.display = empty ? '' : 'none';
+  document.getElementById('home-modes').style.display = empty ? 'none' : '';
+  // Confusable
+  const cf = getConfusable();
+  document.getElementById('btn-confusable').classList.toggle('disabled', !cf.length);
+  if(currentDeckId==='poker'){document.getElementById('confusable-label').textContent='同点数区分';document.getElementById('confusable-desc').textContent='同点数不同花色';}
+  else if(currentDeckId==='numbers'){document.getElementById('confusable-label').textContent='易混淆对';document.getElementById('confusable-desc').textContent='镜像数字交替';}
+  else if(currentDeckId==='locations'){document.getElementById('confusable-label').textContent='同组地点';document.getElementById('confusable-desc').textContent='同组5个地点区分';}
+  else if(currentDeckId==='kidsnumbers'){document.getElementById('confusable-label').textContent='相邻数字';document.getElementById('confusable-desc').textContent='相邻数字配对练习';}
+  else if(currentDeckId==='kidsabc'){document.getElementById('confusable-label').textContent='易混字母';document.getElementById('confusable-desc').textContent='相似字母区分';}
+  else if(currentDeckId==='hiragana'){document.getElementById('confusable-label').textContent='易混假名';document.getElementById('confusable-desc').textContent='形似平假名区分';}
+  else if(currentDeckId==='katakana'){document.getElementById('confusable-label').textContent='易混假名';document.getElementById('confusable-desc').textContent='形似片假名区分';}
+  else if(currentDeckId==='jpwords'){document.getElementById('confusable-label').textContent='相似词汇';document.getElementById('confusable-desc').textContent='易混日语词汇';}
+  else if(currentDeckId==='bopomofo'){document.getElementById('confusable-label').textContent='易混注音';document.getElementById('confusable-desc').textContent='相似注音符号区分';}
+  else if(currentDeckId==='bopomofocb'){document.getElementById('confusable-label').textContent='易混组合';document.getElementById('confusable-desc').textContent='相似注音组合区分';}
+  else{document.getElementById('confusable-label').textContent='易混淆对';document.getElementById('confusable-desc').textContent=cf.length?'交替训练':'当前类型不可用';}
+  // Multi
+  const ml=document.getElementById('multi-label'),md=document.getElementById('multi-desc');
+  if(currentPhase>=4){ml.textContent='三编码连读';md.textContent='3个同时提取';document.getElementById('btn-multi').classList.remove('disabled');}
+  else if(currentPhase>=3){ml.textContent='双编码连读';md.textContent='2个同时提取';document.getElementById('btn-multi').classList.remove('disabled');}
+  else{ml.textContent='多编码连读';md.textContent='Phase 3+ 解锁';document.getElementById('btn-multi').classList.add('disabled');}
+  // 今日弱项按钮
+  const twc = getTodayWeakCount();
+  const twBtn = document.getElementById('btn-today-weak');
+  if(twc > 0){twBtn.style.display='';document.getElementById('today-weak-desc').textContent='今天新增 '+twc+' 个弱项';}
+  else{twBtn.style.display='none';}
+}
+
+function showBrowse(){
+  showScreen('browse');
+  const grid=document.getElementById('browse-grid'),tb=document.getElementById('browse-toolbar');
+  grid.innerHTML='';tb.innerHTML='';
+  const custom=getCustom(),weak=getWeak(),isCustomDeck=!isBuiltin(currentDeckId);
+
+  // Toolbar
+  if(isCustomDeck){
+    const addBtn=document.createElement('button');addBtn.textContent='+ 添加编码';addBtn.onclick=showAddCodeModal;tb.appendChild(addBtn);
+    const renBtn=document.createElement('button');renBtn.textContent='重命名';renBtn.onclick=showRenameDeckModal;tb.appendChild(renBtn);
+    const delBtn=document.createElement('button');delBtn.textContent='删除此标签';delBtn.className='danger';delBtn.onclick=deleteDeck;tb.appendChild(delBtn);
+  }
+
+  document.getElementById('browse-title').textContent=getDeckInfo(currentDeckId).name;
+
+  function makeItem(code, showDelete){
+    const div=document.createElement('div');
+    const isEdited=custom[code];
+    div.className='browse-item'+(weak[code]?' weak':'')+(isEdited?' edited':'');
+    let html=`<div class="num">${formatCode(code)}${isEdited?' <span class="edited-dot">*</span>':''}</div><div class="name">${getName(code)}</div>`;
+    if(showDelete) html+=`<span class="del-btn" onclick="event.stopPropagation();deleteCodeFromCustomDeck('${code.replace(/'/g,"\\'")}')">&times;</span>`;
+    div.innerHTML=html;
+    div.onclick=()=>openEditModal(code);
+    return div;
+  }
+
+  if(currentDeckId==='poker'){
+    grid.className='browse-grid poker-grid';
+    [{l:'♠ 黑桃',c:RANKS.map(r=>'♠'+r)},{l:'♥ 红桃',c:RANKS.map(r=>'♥'+r)},{l:'♣ 梅花',c:RANKS.map(r=>'♣'+r)},{l:'♦ 方片',c:RANKS.map(r=>'♦'+r)},{l:'王',c:['大王','小王']}].forEach(g=>{
+      const lbl=document.createElement('div');lbl.className='browse-suit-label';lbl.textContent=g.l;grid.appendChild(lbl);
+      g.c.forEach(code=>grid.appendChild(makeItem(code,false)));
+    });
+  } else if(currentDeckId==='locations'){
+    grid.className='browse-grid';
+    for(let g=0;g<LOCATION_GROUPS;g++){
+      const base=g*5+1;
+      const lbl=document.createElement('div');lbl.className='browse-suit-label';lbl.textContent='地点组 '+(g+1)+' ('+base+'-'+(base+4)+')';grid.appendChild(lbl);
+      for(let i=0;i<5;i++) grid.appendChild(makeItem(String(base+i),false));
+    }
+  } else if(currentDeckId==='numbers'){
+    grid.className='browse-grid';
+    for(let i=0;i<100;i++) grid.appendChild(makeItem(String(i).padStart(2,'0'),false));
+  } else if(currentDeckId==='kidsnumbers'){
+    grid.className='browse-grid kids-grid';
+    for(let i=0;i<=10;i++) grid.appendChild(makeItem(String(i),false));
+  } else if(currentDeckId==='kidsabc'){
+    grid.className='browse-grid kids-grid';
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').forEach(l=>grid.appendChild(makeItem(l,false)));
+  } else if(currentDeckId==='hiragana'){
+    grid.className='browse-grid';
+    HIRAGANA_ROWS.forEach((row,i)=>{
+      const lbl=document.createElement('div');lbl.className='browse-suit-label';lbl.textContent=HIRAGANA_ROW_NAMES[i];grid.appendChild(lbl);
+      row.split('').forEach(c=>grid.appendChild(makeItem(c,false)));
+    });
+  } else if(currentDeckId==='katakana'){
+    grid.className='browse-grid';
+    KATAKANA_ROWS.forEach((row,i)=>{
+      const lbl=document.createElement('div');lbl.className='browse-suit-label';lbl.textContent=KATAKANA_ROW_NAMES[i];grid.appendChild(lbl);
+      row.split('').forEach(c=>grid.appendChild(makeItem(c,false)));
+    });
+  } else if(currentDeckId==='jpwords'){
+    grid.className='browse-grid';
+    [['动物',['いぬ','ねこ','とり','うま','さる']],['自然',['やま','かわ','うみ','そら','はな','みず']],['物品',['ほん','くるま','いえ','まど','つくえ','いす','かばん']],['时间',['あさ','ひる','よる','きょう','あした']],['动词',['たべる','のむ','みる','きく','いく']],['形容词',['おおきい','ちいさい','あかい','しろい','あたらしい']]].forEach(g=>{
+      const lbl=document.createElement('div');lbl.className='browse-suit-label';lbl.textContent=g[0];grid.appendChild(lbl);
+      g[1].forEach(c=>grid.appendChild(makeItem(c,false)));
+    });
+  } else if(currentDeckId==='jpkatawords'){
+    grid.className='browse-grid';
+    [['媒体/电器',['テレビ','カメラ','ゲーム','テスト','ノート','ペン','メール']],['交通/场所',['ホテル','レストラン','バス','タクシー','トイレ','エレベーター','エスカレーター','スーパー','デパート']],['食物',['コーヒー','ジュース','アイス','パン']]].forEach(g=>{
+      const lbl=document.createElement('div');lbl.className='browse-suit-label';lbl.textContent=g[0];grid.appendChild(lbl);
+      g[1].forEach(c=>grid.appendChild(makeItem(c,false)));
+    });
+  } else if(currentDeckId==='jpparticles'){
+    grid.className='browse-grid';
+    Object.keys(JP_PARTICLES_DATA).forEach(c=>grid.appendChild(makeItem(c,false)));
+  } else if(currentDeckId==='bopomofo'){
+    grid.className='browse-grid';
+    BOPOMOFO_ROWS.forEach((row,i)=>{
+      const lbl=document.createElement('div');lbl.className='browse-suit-label';lbl.textContent=BOPOMOFO_ROW_NAMES[i];grid.appendChild(lbl);
+      row.split('').forEach(c=>grid.appendChild(makeItem(c,false)));
+    });
+  } else if(currentDeckId==='bopomofocb'){
+    grid.className='browse-grid';
+    [['ㄧ系列(i)',Object.keys(BOPOMOFO_COMBO_DATA).filter(k=>k.startsWith('ㄧ'))],['ㄨ系列(u)',Object.keys(BOPOMOFO_COMBO_DATA).filter(k=>k.startsWith('ㄨ'))],['ㄩ系列(ü)',Object.keys(BOPOMOFO_COMBO_DATA).filter(k=>k.startsWith('ㄩ'))]].forEach(g=>{
+      const lbl=document.createElement('div');lbl.className='browse-suit-label';lbl.textContent=g[0];grid.appendChild(lbl);
+      g[1].forEach(c=>grid.appendChild(makeItem(c,false)));
+    });
+  } else {
+    // Custom deck
+    grid.className='browse-grid';
+    const codes=getAllCodes();
+    if(!codes.length){grid.innerHTML='<div style="grid-column:1/-1;text-align:center;color:#555;padding:40px">暂无编码，点击上方"+ 添加编码"</div>';}
+    else codes.forEach(code=>grid.appendChild(makeItem(code,true)));
+  }
+}
+
+function showStatsPage(){
+  showScreen('stats');
+  const weak=getWeak(),wkEl=document.getElementById('stats-weak-list');
+  const wk=Object.keys(weak);
+  wkEl.innerHTML=wk.length?wk.map(c=>`<div class="stats-row"><span>${c} → ${getName(c)}</span><span>${weak[c].streak||0}/3</span></div>`).join(''):'<div style="color:#888">无弱项</div>';
+  const dEl=document.getElementById('stats-daily'),recent=(getStats()).slice(-7).reverse();
+  dEl.innerHTML=recent.length?recent.map(d=>{const acc=d.total>0?Math.round(d.correct/d.total*100):0;const avg=d.total>0?(d.totalTime/d.total).toFixed(1):'-';return `<div class="stats-row"><span>${d.date}</span><span>${d.total}题 | ${acc}% | 均${avg}s</span></div>`;}).join(''):'<div style="color:#888">暂无记录</div>';
+}
+
+// ============================================================
+// EDIT MODAL
+// ============================================================
+let editingCode='';
+function openEditModal(code){
+  editingCode=code;
+  document.getElementById('edit-code').innerHTML=formatCode(code);
+  document.getElementById('edit-input').value=getName(code);
+  const def=getDeckData()[code]||'(自定义)';
+  document.getElementById('edit-default').textContent='默认：'+def;
+  openModal('edit-modal');
+  setTimeout(()=>document.getElementById('edit-input').focus(),100);
+}
+function saveEdit(){
+  const val=document.getElementById('edit-input').value.trim();
+  if(!val||!editingCode)return;
+  // For custom decks, edit the source data directly
+  if(!isBuiltin(currentDeckId)){
+    userDecks[currentDeckId].data[editingCode]=val;
+    saveState();closeModal('edit-modal');showBrowse();return;
+  }
+  // For built-in decks, use custom overrides
+  if(!allCustom[currentDeckId])allCustom[currentDeckId]={};
+  if(val===getDeckData()[editingCode]) delete allCustom[currentDeckId][editingCode];
+  else allCustom[currentDeckId][editingCode]=val;
+  saveState();closeModal('edit-modal');showBrowse();
+}
+function resetOneCode(){
+  if(!editingCode)return;
+  if(!isBuiltin(currentDeckId)){/* can't reset custom deck codes, just close */closeModal('edit-modal');return;}
+  if(allCustom[currentDeckId])delete allCustom[currentDeckId][editingCode];
+  saveState();closeModal('edit-modal');showBrowse();
+}
+
+// Phase
+function showPhaseModal(){openModal('phase-modal');document.querySelectorAll('.phase-option').forEach((el,i)=>el.classList.toggle('active',i+1===currentPhase));}
+function setPhase(p){currentPhase=p;saveState();updateHomeUI();closeModal('phase-modal');}
+function resetWeakItems(){if(confirm('确定清空当前类型弱项？')){allWeak[currentDeckId]={};saveState();updateHomeUI();}}
+
+// ============================================================
+// MODAL HELPERS
+// ============================================================
+function openModal(id){document.getElementById(id).classList.add('show');}
+function closeModal(id){document.getElementById(id).classList.remove('show');editingCode='';}
+
+document.querySelectorAll('.modal-overlay').forEach(el=>{
+  el.addEventListener('click',e=>{if(e.target===el)closeModal(el.id);});
+});
+document.getElementById('edit-input').addEventListener('keydown',e=>{if(e.key==='Enter')saveEdit();if(e.key==='Escape')closeModal('edit-modal');});
+document.getElementById('new-deck-name').addEventListener('keydown',e=>{if(e.key==='Enter')createDeck();});
+document.getElementById('new-code-name').addEventListener('keydown',e=>{if(e.key==='Enter')addCodeToCustomDeck();});
+document.getElementById('rename-deck-input').addEventListener('keydown',e=>{if(e.key==='Enter')renameDeck();});
+
+// Keyboard shortcuts for training
+document.addEventListener('keydown',function(e){
+  if(document.querySelector('.modal-overlay.show'))return;
+  if(document.getElementById('screen-training').style.display==='none')return;
+  if(e.code==='Space'){
+    e.preventDefault();
+    if(!revealed){
+      if(currentFriction===2){
+        // F2: space does nothing (must choose button)
+      } else {
+        revealCard();
+      }
+    }
+  }
+  else if(e.code==='ArrowLeft'||e.code==='Digit1'){if(revealed&&judgeReady)judgeCard('remember');}
+  else if(e.code==='ArrowRight'||e.code==='Digit2'){if(revealed&&judgeReady)judgeCard('dont_know');}
+  else if(e.code==='ArrowDown'||e.code==='Digit3'){if(revealed&&judgeReady)judgeCard('vague');}
+});
+
+// ============================================================
+// STREAK
+// ============================================================
+function getStreak() {
+  var data = JSON.parse(localStorage.getItem('mt_streak') || '{}');
+  return data;
+}
+function updateStreak() {
+  var data = getStreak();
+  var t = today();
+  if (data.lastDate === t) { /* already recorded today */ }
+  else {
+    // Check if yesterday was trained
+    var yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    var yd = yesterday.toISOString().slice(0, 10);
+    if (data.lastDate === yd) {
+      data.count = (data.count || 0) + 1;
+    } else if (data.lastDate !== t) {
+      data.count = 1; // streak broken, start fresh
+    }
+    data.lastDate = t;
+    localStorage.setItem('mt_streak', JSON.stringify(data));
+  }
+  return data.count || 0;
+}
+function checkStreakDisplay() {
+  var data = getStreak();
+  var t = today();
+  var count = 0;
+  if (data.lastDate === t) {
+    count = data.count || 0;
+  } else {
+    var yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    var yd = yesterday.toISOString().slice(0, 10);
+    count = data.lastDate === yd ? (data.count || 0) : 0;
+  }
+  document.getElementById('streak-count').textContent = count;
+}
+
+// ============================================================
+// SEQUENCE MEMORY MODE
+// ============================================================
+let seqDeck = [], seqShowMode = 'all', seqMemStart = 0, seqRecStart = 0;
+let seqCurrentSlot = 0, seqCorrect = 0, seqRAF = null;
+let seqByOneIndex = 0, seqByOneTimer = null;
+
+function startSequenceMode() {
+  var codes = getFilteredCodes();
+  if (!codes.length) { alert('当前范围内没有编码'); return; }
+  var count = getModeCount('sequence');
+  var rep = getModeRepeat('sequence');
+  seqDeck = pickCodes(codes, count, rep);
+  currentMode = 'sequence'; lastMode = 'sequence';
+  seqShowMode = 'all';
+  document.getElementById('seq-show-all').classList.add('active');
+  document.getElementById('seq-show-one').classList.remove('active');
+  showSeqMemorize();
+}
+
+function showSeqMemorize() {
+  showScreen('seq-memorize');
+  seqMemStart = Date.now();
+  var container = document.getElementById('seq-mem-cards');
+  container.innerHTML = '';
+  seqDeck.forEach(function(code, i) {
+    var div = document.createElement('div');
+    div.className = 'seq-card-item';
+    div.id = 'seq-item-' + i;
+    div.innerHTML = '<div class="seq-code">' + formatCode(code) + '</div><div class="seq-name">' + getName(code) + '</div>';
+    container.appendChild(div);
+  });
+  document.getElementById('seq-ready-btn').textContent = 'READY';
+  document.getElementById('seq-ready-btn').onclick = startSeqRecall;
+  startSeqMemTimer();
+}
+
+function setSeqShowMode(mode) {
+  seqShowMode = mode;
+  document.getElementById('seq-show-all').classList.toggle('active', mode === 'all');
+  document.getElementById('seq-show-one').classList.toggle('active', mode === 'one');
+  if (mode === 'one') {
+    startByOneMode();
+  } else {
+    stopByOne();
+    var items = document.querySelectorAll('.seq-card-item');
+    items.forEach(function(el) { el.classList.remove('hidden'); });
+  }
+}
+
+function startByOneMode() {
+  seqByOneIndex = 0;
+  var items = document.querySelectorAll('.seq-card-item');
+  items.forEach(function(el, i) {
+    el.classList.toggle('hidden', i !== 0);
+  });
+  clearInterval(seqByOneTimer);
+  seqByOneTimer = setInterval(function() {
+    seqByOneIndex++;
+    if (seqByOneIndex >= seqDeck.length) {
+      clearInterval(seqByOneTimer);
+      seqByOneTimer = null;
+      items.forEach(function(el) { el.classList.add('hidden'); });
+      return;
+    }
+    items.forEach(function(el, i) {
+      el.classList.toggle('hidden', i !== seqByOneIndex);
+    });
+  }, 2000);
+}
+
+function stopByOne() {
+  if (seqByOneTimer) { clearInterval(seqByOneTimer); seqByOneTimer = null; }
+}
+
+function startSeqMemTimer() {
+  var el = document.getElementById('seq-mem-timer');
+  cancelAnimationFrame(seqRAF);
+  function tick() {
+    if (document.getElementById('screen-seq-memorize').style.display === 'none') return;
+    el.textContent = ((Date.now() - seqMemStart) / 1000).toFixed(1) + 's';
+    seqRAF = requestAnimationFrame(tick);
+  }
+  tick();
+}
+
+function startSeqRecall() {
+  stopByOne();
+  cancelAnimationFrame(seqRAF);
+  var memTime = ((Date.now() - seqMemStart) / 1000).toFixed(1);
+  showScreen('seq-recall');
+  seqRecStart = Date.now();
+  seqCurrentSlot = 0;
+  seqCorrect = 0;
+
+  // Render slots
+  var slotsEl = document.getElementById('seq-recall-slots');
+  slotsEl.innerHTML = '';
+  seqDeck.forEach(function(code, i) {
+    var slot = document.createElement('div');
+    slot.className = 'seq-slot' + (i === 0 ? ' current' : '');
+    slot.id = 'seq-slot-' + i;
+    slot.textContent = (i + 1);
+    slotsEl.appendChild(slot);
+  });
+
+  // Render options (shuffled)
+  var optionsEl = document.getElementById('seq-recall-options');
+  optionsEl.innerHTML = '';
+  var shuffled = shuffle(seqDeck.map(function(c, i) { return { code: c, idx: i }; }));
+  shuffled.forEach(function(item) {
+    var btn = document.createElement('button');
+    btn.className = 'seq-opt-btn';
+    btn.innerHTML = formatCode(item.code);
+    btn.dataset.idx = item.idx;
+    btn.dataset.code = item.code;
+    btn.onclick = function() { pickSeqAnswer(btn, item.code, item.idx); };
+    optionsEl.appendChild(btn);
+  });
+
+  document.getElementById('seq-recall-progress').textContent = '记忆用时 ' + memTime + 's — 请按顺序选择';
+  startSeqRecTimer();
+}
+
+function startSeqRecTimer() {
+  var el = document.getElementById('seq-rec-timer');
+  cancelAnimationFrame(seqRAF);
+  function tick() {
+    if (document.getElementById('screen-seq-recall').style.display === 'none') return;
+    el.textContent = ((Date.now() - seqRecStart) / 1000).toFixed(1) + 's';
+    seqRAF = requestAnimationFrame(tick);
+  }
+  tick();
+}
+
+function pickSeqAnswer(btn, code, idx) {
+  if (btn.classList.contains('used')) return;
+  var slotIdx = seqCurrentSlot;
+  var slot = document.getElementById('seq-slot-' + slotIdx);
+  var correctCode = seqDeck[slotIdx];
+  var correct = code === correctCode;
+  slot.innerHTML = formatCode(code);
+  if (correct) {
+    slot.classList.add('correct');
+    seqCorrect++;
+  } else {
+    slot.classList.add('wrong');
+    setTimeout(function() {
+      slot.innerHTML = '<span style="font-size:11px;color:#ff4757">' + formatCode(code) + '</span><br><span style="color:#4caf50">' + formatCode(correctCode) + '</span>';
+    }, 100);
+  }
+  slot.classList.remove('current');
+  btn.classList.add('used');
+
+  seqCurrentSlot++;
+  if (seqCurrentSlot >= seqDeck.length) {
+    finishSequence();
+  } else {
+    document.getElementById('seq-slot-' + seqCurrentSlot).classList.add('current');
+  }
+}
+
+function finishSequence() {
+  cancelAnimationFrame(seqRAF);
+  var memTime = ((seqRecStart - seqMemStart) / 1000);
+  var recTime = ((Date.now() - seqRecStart) / 1000);
+  var totalTime = memTime + recTime;
+  var avgTime = seqDeck.length > 0 ? totalTime / seqDeck.length : 0;
+  saveDailyStats(seqCorrect, seqDeck.length - seqCorrect, avgTime);
+  updateStreak();
+
+  document.getElementById('sum-correct').textContent = seqCorrect;
+  document.getElementById('sum-wrong').textContent = seqDeck.length - seqCorrect;
+  document.getElementById('sum-avg').textContent = avgTime.toFixed(1) + 's';
+  document.getElementById('sum-total').textContent = totalTime.toFixed(1) + 's';
+  document.getElementById('summary-title').textContent = '顺序记忆完成';
+  var wd = document.getElementById('sum-weak'), wi = document.getElementById('sum-weak-items');
+  wd.style.display = 'none';
+  showScreen('summary');
+}
+
+function endSequence() {
+  stopByOne();
+  cancelAnimationFrame(seqRAF);
+  showHome();
+}
+
+// ============================================================
+// MIGRATE old data
+// ============================================================
+(function(){
+  ['mt_weak','mt_stats','mt_custom'].forEach(key=>{
+    const old=localStorage.getItem(key);
+    if(old){
+      const target=key==='mt_weak'?allWeak:key==='mt_stats'?allStats:allCustom;
+      if(!target.numbers)target.numbers=JSON.parse(old);
+      saveState();localStorage.removeItem(key);
+    }
+  });
+})();
+
+// ============================================================
+// ANDROID BACK BUTTON / GESTURE
+// ============================================================
+var currentScreen = 'home';
+var _origShowScreen = showScreen;
+showScreen = function(name) {
+  currentScreen = name;
+  _origShowScreen(name);
+};
+
+function handleBack() {
+  var modal = document.querySelector('.modal-overlay.show');
+  if (modal) { modal.classList.remove('show'); return true; }
+  if (currentScreen === 'training') { endTraining(); return true; }
+  if (currentScreen === 'summary') { showHome(); return true; }
+  if (currentScreen === 'browse' || currentScreen === 'stats') { showHome(); return true; }
+  if (currentScreen === 'seq-memorize' || currentScreen === 'seq-recall') { showHome(); return true; }
+  return false;
+}
+
+// Method 1: Capacitor native back button
+try {
+  if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App) {
+    window.Capacitor.Plugins.App.addListener('backButton', function(data) {
+      var handled = handleBack();
+      if (!handled) {
+        window.Capacitor.Plugins.App.exitApp();
+      }
+    });
+  }
+} catch(e) {}
+
+// Method 2: Browser popstate fallback
+(function() {
+  var _depth = 0;
+  function pushState() { _depth++; history.pushState({d:_depth}, ''); }
+  history.replaceState({d:0}, '');
+  pushState();
+  window.addEventListener('popstate', function() {
+    handleBack();
+    pushState();
+  });
+})();
+
+// ============================================================
+// INIT
+// ============================================================
+if(!getDeckInfo(currentDeckId)) currentDeckId='numbers';
+renderTabs();
+showHome();
+</script>
+</body>
+</html>
