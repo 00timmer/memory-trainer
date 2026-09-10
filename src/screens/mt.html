@@ -24,6 +24,14 @@
       </select>
     </label>
     <div class="mt-note">校准试次要求先选出答案再看对错，用来检查自评有没有放水。</div>
+    <label class="mt-setting">听觉语速
+      <select id="mt-set-rate" onchange="MT2.setCfg('audioRate', parseFloat(this.value))">
+        <option value="0.8">0.8×（慢）</option><option value="1">1.0×（标准）</option>
+        <option value="1.2">1.2×</option><option value="1.5">1.5×（快）</option>
+      </select>
+    </label>
+    <div class="mt-note">改了语速，前后的听觉成绩就不能直接比了。想做长期对照就别动它。
+      <button class="mt-btn" style="margin-top:8px" onclick="MT2.ttsTest()">检测语音</button></div>
     <label class="mt-setting">「慢」的判定阈值
       <select id="mt-set-speed" onchange="MT2.setCfg('speedTarget', parseFloat(this.value))">
         <option value="1.5">1.5s</option><option value="2">2.0s</option>

@@ -98,7 +98,15 @@ MT2.runNextSegment = function () {
   var seg = MT2.session.segs[MT2.session.i];
   if (!seg) { MT2.session = { segs: [], i: -1, preset: MT2.session.preset }; showHome(); return; }
   if (seg.type === 'direct') {
-    DM.start('training', MT2.buildDirectPlan(seg.minutes * 60), MT2.runNextSegment);
+    var secs = seg.minutes * 60, plan;
+    if (MT2.tts.supported()) {
+      // 听觉是主要杠杆之一，支持语音时和视觉各占一半
+      plan = MT2.buildDirectPlan(Math.round(secs / 2), 'visual')
+        .concat(MT2.buildDirectPlan(Math.round(secs / 2), 'audio'));
+    } else {
+      plan = MT2.buildDirectPlan(secs, 'visual');
+    }
+    DM.start('training', plan, MT2.runNextSegment);
     return;
   }
   MT2.startRetrievalSegment(seg.minutes);
@@ -128,10 +136,13 @@ MT2.todayPlan = function () {
   if (s.wrongItems.length) bits.push('错项 ' + s.wrongItems.length);
   if (s.slowItems.length) bits.push('慢项 ' + s.slowItems.length);
   if (s.dueItems.length) bits.push('到期 ' + s.dueItems.length);
+  var rst = MT2.retentionStatus();
+  if (rst.dueItems) bits.push('保持测试 ' + rst.dueItems);
   var key = MT2.cfg('sessionLen');
   var p = MT2.SESSION_PRESETS[key] || MT2.SESSION_PRESETS['15m'];
   var segs = MT2.buildSegments(key).map(function (g) {
-    return g.type === 'direct' ? '直接记忆 ' + g.minutes + ' 分' : '提取 ' + g.minutes + ' 分';
+    if (g.type !== 'direct') return '提取 ' + g.minutes + ' 分';
+    return (MT2.tts.supported() ? '直接记忆（视觉+听觉）' : '直接记忆') + ' ' + g.minutes + ' 分';
   }).join(' + ');
   return p.label + '：' + segs + (bits.length ? ' · 优先练 ' + bits.join(' / ') : ' · 全部已掌握，随机抽查');
 };

@@ -98,51 +98,9 @@ MT2.renderDashboard = function () {
   h += '</div>';
 
   // ---- 直接记忆 ----
-  var dm = MT2.directSummary();
-  h += '<div class="mt-card"><div class="mt-card-h">直接记忆 <span class="mt-sub">看一遍，能留下多少</span></div>';
-  if (!dm.trials) {
-    h += '<div class="mt-empty">还没有数据。首页「直接记忆」练一轮，或先跑一次标准化基线。</div>';
-  } else {
-    var cap = dm.baseline ? dm.baseline.capacityText : '—';
-    h += '<div class="mt-kpis">' +
-      kpi('视觉容量', cap) +
-      kpi('记住的字', fmtP(dm.itemAcc)) +
-      kpi('位置正确', fmtP(dm.positionAcc)) +
-      kpi('当前长度', dm.currentLen) +
-      '</div>';
-    if (dm.meaningfulN) {
-      h += '<div class="mt-note">有意义材料（' + dm.meaningfulN + ' 次，当前难度 T' + dm.currentTier + '）</div>' +
-        '<div class="mt-kpis">' +
-        kpi('大意', fmtP(dm.gist)) +
-        kpi('关键词', fmtP(dm.keyword)) +
-        kpi('逐字', fmtP(dm.verbatim)) +
-        kpi('顺序', fmtP(dm.order)) +
-        '</div>';
-    }
-    if (Object.keys(dm.byLen).length) {
-      h += '<div class="mt-note">日常训练各长度正确率</div>' + MT2.renderCurve(dm.byLen);
-    }
-    if (dm.baseline) {
-      h += '<div class="mt-note">最近一次基线 ' + new Date(dm.baseline.ts).toISOString().slice(0, 10) +
-           '（曝光 ' + (dm.baseline.exposureMs / 1000).toFixed(1) + 's）</div>' +
-           MT2.renderCurve(dm.baseline.byLen);
-      var bl = MT2.db.direct.baselines;
-      if (bl.length >= 2) {
-        var prev = bl[bl.length - 2], cur = bl[bl.length - 1];
-        h += MT2.baselineComparable(prev, cur)
-          ? '<div class="mt-note">上次 ' + prev.capacityText + ' → 这次 ' + cur.capacityText + '</div>'
-          : '<div class="mt-warn">上一次基线的条件和这次不同，两个容量数字不可比。</div>';
-      } else {
-        h += '<div class="mt-note">只有一次基线，还没有对照。建议 7 / 30 / 90 天后同条件重跑。</div>';
-      }
-    } else {
-      h += '<div class="mt-warn">还没跑过标准化基线。日常训练的长度是自适应的，不能当基线用 —— ' +
-           '要看容量有没有变，需要固定条件重跑同一套测试。</div>';
-    }
-    h += '<div class="mt-note">随机序列的进步主要停留在随机序列本身，不太会迁移到生词、诗词、歌词。' +
-         '判断整体记忆是否变好，看有意义材料那几项。</div>';
-  }
-  h += '<button class="mt-btn" onclick="MT2.startBaseline()">跑一次标准化基线</button></div>';
+  h += MT2.renderDirectCard('visual');
+  h += MT2.renderDirectCard('audio');
+  h += MT2.renderRetentionCard();
 
   // ---- 编码效率（P5）----
   h += '<div class="mt-card mt-pending"><div class="mt-card-h">编码效率 <span class="mt-sub">需要用方法时，建立稳定记忆有多快</span></div>' +
@@ -228,6 +186,97 @@ MT2.mapDetail = function (code) {
   if (h.indexOf('mt-detrow') === -1) h += '<div class="mt-note">这个编码还没有新口径的试次。</div>';
   box.innerHTML = h;
   box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+};
+
+MT2.renderDirectCard = function (mod) {
+  var isA = mod === 'audio';
+  var dm = MT2.directSummary(null, mod);
+  var h = '<div class="mt-card"><div class="mt-card-h">' +
+    (isA ? '听觉直接记忆 <span class="mt-sub">听一遍，能留下多少</span>'
+         : '视觉直接记忆 <span class="mt-sub">看一遍，能留下多少</span>') + '</div>';
+
+  if (isA && !MT2.tts.supported()) {
+    h += '<div class="mt-warn">语音不可用：' + MT2.tts.reason() + '</div>';
+    if (dm.trials) h += '<div class="mt-note">已有 ' + dm.trials + ' 次历史记录。</div>';
+    return h + '<button class="mt-btn" onclick="MT2.ttsTest()">检测语音</button></div>';
+  }
+  if (!dm.trials) {
+    h += '<div class="mt-empty">还没有数据。首页' + (isA ? '「听觉记忆」' : '「直接记忆」') + '练一轮' +
+         (isA ? '。' : '，或先跑一次标准化基线。') + '</div>';
+    return h + '</div>';
+  }
+  h += '<div class="mt-kpis">' +
+    kpi(isA ? '数字串正确' : '视觉容量', isA ? fmtP(dm.itemAcc) : (dm.baseline ? dm.baseline.capacityText : '—')) +
+    kpi(isA ? '位置正确' : '记住的字', fmtP(isA ? dm.positionAcc : dm.itemAcc)) +
+    kpi('当前长度', dm.currentLen) +
+    kpi('试次', dm.trials) + '</div>';
+  if (dm.meaningfulN) {
+    h += '<div class="mt-note">' + (isA ? '语音材料' : '有意义材料') + '（' + dm.meaningfulN +
+         ' 次，当前难度 T' + dm.currentTier + '）</div><div class="mt-kpis">' +
+      kpi('大意', fmtP(dm.gist)) + kpi('关键词', fmtP(dm.keyword)) +
+      kpi('逐字', fmtP(dm.verbatim)) + kpi('顺序', fmtP(dm.order)) + '</div>';
+  }
+  if (Object.keys(dm.byLen).length) {
+    h += '<div class="mt-note">各长度正确率（自适应，不是基线）</div>' + MT2.renderCurve(dm.byLen);
+  }
+  if (!isA) {
+    if (dm.baseline) {
+      h += '<div class="mt-note">最近一次基线 ' + new Date(dm.baseline.ts).toISOString().slice(0, 10) +
+           '（曝光 ' + (dm.baseline.exposureMs / 1000).toFixed(1) + 's）</div>' + MT2.renderCurve(dm.baseline.byLen);
+      var bl = MT2.db.direct.baselines.filter(function (b) { return (b.modality || 'visual') === 'visual'; });
+      if (bl.length >= 2) {
+        var prev = bl[bl.length - 2], cur = bl[bl.length - 1];
+        h += MT2.baselineComparable(prev, cur)
+          ? '<div class="mt-note">上次 ' + prev.capacityText + ' → 这次 ' + cur.capacityText + '</div>'
+          : '<div class="mt-warn">上一次基线的条件和这次不同，两个容量数字不可比。</div>';
+      } else {
+        h += '<div class="mt-note">只有一次基线，还没有对照。建议 7 / 30 / 90 天后同条件重跑。</div>';
+      }
+    } else {
+      h += '<div class="mt-warn">还没跑过标准化基线。日常训练的长度是自适应的，不能当基线用 —— ' +
+           '要看容量有没有变，需要固定条件重跑同一套测试。</div>';
+    }
+    h += '<div class="mt-note">随机序列的进步主要停留在随机序列本身，不太会迁移到生词、诗词、歌词。' +
+         '判断整体记忆是否变好，看有意义材料和听觉那几项。</div>';
+    h += '<button class="mt-btn" onclick="MT2.startBaseline()">跑一次标准化基线</button>';
+  } else {
+    var rates = {};
+    MT2.db.direct.trials.forEach(function (t) { if (t.rate) rates[t.rate] = 1; });
+    if (Object.keys(rates).length > 1) {
+      h += '<div class="mt-warn">历史数据里出现过不同的语速（' + Object.keys(rates).join('、') +
+           '），不同语速的成绩不能直接比。</div>';
+    }
+  }
+  return h + '</div>';
+};
+
+MT2.renderRetentionCard = function () {
+  var st = MT2.retentionStatus();
+  var curve = MT2.retentionCurve();
+  var order = MT2.RETENTION_BUCKETS.filter(function (b) { return curve[b.key]; });
+  var h = '<div class="mt-card"><div class="mt-card-h">保持曲线 ' +
+          '<span class="mt-sub">学完之后还剩多少</span></div>';
+  if (!order.length) {
+    h += '<div class="mt-empty">还没有保持数据。练过有意义材料之后，30 秒 / 5 分钟 / 24 小时 / 3 天 / 7 天' +
+         '会自动排进队列，下次训练时优先补测。</div>';
+  } else {
+    h += '<div class="mt-retention">' + order.map(function (b) {
+      var c = curve[b.key];
+      return '<div class="mt-retention-row"><span class="lab">' + b.label + '</span>' +
+        '<span class="track"><span class="fill" style="width:' + (c.keyword * 100) + '%"></span></span>' +
+        '<span class="val">' + Math.round(c.keyword * 100) + '% · n=' + c.n + '</span></div>';
+    }).join('') + '</div>';
+    h += '<div class="mt-note">显示的是关键词命中率，按<b>真实经过时间</b>分桶，不是按预定档位 —— ' +
+         '标称 24 小时但实际隔了 4 天的，会记到 3 天那一桶。</div>';
+  }
+  h += '<div class="mt-kpis">' + kpi('已测', st.tested) +
+       kpi('到期待测', st.dueItems, st.dueItems ? '#f0883e' : '') +
+       kpi('排队中', st.pending) + '</div>';
+  if (st.dueItems) {
+    h += '<div class="mt-note">到期的会在下次训练开头优先补测（一轮最多 8 项）。' +
+         '测试前不会再给你看原文。</div>';
+  }
+  return h + '</div>';
 };
 
 MT2.showDash = function () { showScreen('mt-dash'); MT2.renderDashboard(); };

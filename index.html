@@ -388,6 +388,21 @@ body { font-family: -apple-system, 'PingFang SC', sans-serif; background: #0f0f1
 /* 新屏幕的头部要和原有训练屏一样留出左右边距 */
 .mt-page .training-header { padding-left: 20px; padding-right: 20px; box-sizing: border-box; }
 
+.dm-audio { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.dm-audio-icon { font-size: 56px; animation: dmpulse 1.4s ease-in-out infinite; }
+.dm-audio-label { font-size: 14px; color: #8a90a0; }
+@keyframes dmpulse { 0%,100% { opacity: .45; transform: scale(1); } 50% { opacity: 1; transform: scale(1.08); } }
+.dm-bar .fill.indeterminate { width: 40% !important; animation: dmslide 1.1s ease-in-out infinite; }
+@keyframes dmslide { 0% { margin-left: 0; } 50% { margin-left: 60%; } 100% { margin-left: 0; } }
+.dm-entry.disabled { opacity: .45; }
+.dm-entry.disabled .t::after { content: ' （不可用）'; font-size: 12px; color: #f0883e; font-weight: 400; }
+.mt-retention { margin: 10px 0; }
+.mt-retention-row { display: flex; align-items: center; gap: 9px; margin-bottom: 6px; font-size: 12.5px; }
+.mt-retention-row .lab { width: 58px; color: #8a90a0; }
+.mt-retention-row .track { flex: 1; height: 15px; background: #1b1f28; border-radius: 4px; overflow: hidden; display: block; }
+.mt-retention-row .fill { display: block; height: 100%; background: #4a9eff; }
+.mt-retention-row .val { width: 66px; text-align: right; color: #b8bec9; }
+
 </style>
 </head>
 <body>
@@ -2453,6 +2468,14 @@ showHome();
       </select>
     </label>
     <div class="mt-note">校准试次要求先选出答案再看对错，用来检查自评有没有放水。</div>
+    <label class="mt-setting">听觉语速
+      <select id="mt-set-rate" onchange="MT2.setCfg('audioRate', parseFloat(this.value))">
+        <option value="0.8">0.8×（慢）</option><option value="1">1.0×（标准）</option>
+        <option value="1.2">1.2×</option><option value="1.5">1.5×（快）</option>
+      </select>
+    </label>
+    <div class="mt-note">改了语速，前后的听觉成绩就不能直接比了。想做长期对照就别动它。
+      <button class="mt-btn" style="margin-top:8px" onclick="MT2.ttsTest()">检测语音</button></div>
     <label class="mt-setting">「慢」的判定阈值
       <select id="mt-set-speed" onchange="MT2.setCfg('speedTarget', parseFloat(this.value))">
         <option value="1.5">1.5s</option><option value="2">2.0s</option>
@@ -2507,7 +2530,7 @@ function mtLoad(key, def) {
 MT2.db = {
   retrieval: mtLoad('mt_retrieval', {}),
   weakness:  mtLoad('mt_weakness', {}),
-  direct:    mtLoad('mt_direct', { trials: [], baselines: [], adaptive: {} }),
+  direct:    mtLoad('mt_direct', { trials: [], baselines: [], adaptive: {}, retention: [] }),
   encoding:  mtLoad('mt_encoding', { items: [], tta: [] }),
   queue:     mtLoad('mt_queue', []),
   used:      mtLoad('mt_materials_used', {}),
@@ -2518,6 +2541,7 @@ MT2.DEFAULTS = {
   calibRate: 0.20,      // 校准试次比例
   speedTarget: 2.0,     // 「正确但慢」阈值（秒）
   sessionLen: '15m',
+  audioRate: 1,
   requeueGap: [3, 5]    // 答错后隔几张重测
 };
 MT2.cfg = function (k) {
@@ -2645,6 +2669,28 @@ MT2.MAT.CHARS = (
   '龙虎狮象狼熊鹿兔猫狗猪鸡鸭鹅鸽雀鹰蛇蛙蝶蜂蚁'
 ).split('');
 
+// 听觉阶梯最低一档：短语（5–15 字）。听一遍就复述，先从这里起步。
+MT2.MAT.PHRASES = [
+  { text: '窗户开着', keys: ['窗户', '开'] },
+  { text: '第三个抽屉', keys: ['第三个', '抽屉'] },
+  { text: '明天早上八点', keys: ['明天', '早上', '八点'] },
+  { text: '两瓶醋一袋盐', keys: ['两瓶醋', '一袋盐'] },
+  { text: '红色的旧自行车', keys: ['红色', '旧', '自行车'] },
+  { text: '楼下第二个路口右转', keys: ['楼下', '第二个路口', '右转'] },
+  { text: '把钥匙放在门垫下面', keys: ['钥匙', '门垫', '下面'] },
+  { text: '周四下午三点半开会', keys: ['周四', '下午三点半', '开会'] },
+  { text: '五斤面粉和三个鸡蛋', keys: ['五斤面粉', '三个鸡蛋'] },
+  { text: '他住在七楼靠东那间', keys: ['七楼', '靠东', '那间'] },
+  { text: '车停在地下二层的角落', keys: ['地下二层', '角落'] },
+  { text: '先关水阀再拧螺丝', keys: ['先关水阀', '再拧螺丝'] },
+  { text: '收据夹在蓝色的本子里', keys: ['收据', '蓝色', '本子'] },
+  { text: '票已经改签到晚班车', keys: ['票', '改签', '晚班车'] },
+  { text: '院子里有三棵柿子树', keys: ['院子', '三棵', '柿子树'] },
+  { text: '密码是他生日倒过来', keys: ['密码', '生日', '倒过来'] },
+  { text: '面要煮满六分钟', keys: ['面', '六分钟'] },
+  { text: '货在周一之前必须发出', keys: ['货', '周一之前', '发出'] }
+];
+
 // 有意义材料：keys 是关键词，用来自动打「关键词」和「顺序」两项分
 // tier 1 短句 / 2 长句 / 3 两句 / 4 短段
 MT2.MAT.TEXTS = [
@@ -2690,7 +2736,18 @@ MT2.MAT.TEXTS = [
 // ------------------------------------------------------------
 // 取材料：优先没用过的；全部用过后重新开放，但避开最近 N 次用过的
 // ------------------------------------------------------------
+// tier 0 = 短语（听觉阶梯起点），1–4 = 句子/段落
 MT2.MAT.pickText = function (tier) {
+  if (tier === 0) {
+    var ph = MT2.MAT.PHRASES.map(function (x) {
+      return { tier: 0, text: x.text, keys: x.keys };
+    });
+    var freshP = ph.filter(function (t) { return !MT2.db.used['txt:' + t.text]; });
+    var useP = freshP.length ? freshP : ph;
+    var pick = useP[Math.floor(Math.random() * useP.length)];
+    MT2.db.used['txt:' + pick.text] = Date.now();
+    return pick;
+  }
   var pool = MT2.MAT.TEXTS.filter(function (t) { return t.tier === tier; });
   if (!pool.length) pool = MT2.MAT.TEXTS.slice();
   var fresh = pool.filter(function (t) { return !MT2.db.used['txt:' + t.text]; });
@@ -2703,10 +2760,25 @@ MT2.MAT.pickText = function (tier) {
 };
 
 MT2.MAT.freshTextCount = function (tier) {
+  if (tier === 0) {
+    return MT2.MAT.PHRASES.filter(function (t) { return !MT2.db.used['txt:' + t.text]; }).length;
+  }
   return MT2.MAT.TEXTS.filter(function (t) {
     return t.tier === tier && !MT2.db.used['txt:' + t.text];
   }).length;
 };
+
+// 按原文找回材料（延迟保持测试要重新取 keys，但绝不重新呈现原文）
+MT2.MAT.findByText = function (text) {
+  var all = MT2.MAT.TEXTS.concat(MT2.MAT.PHRASES.map(function (x) {
+    return { tier: 0, text: x.text, keys: x.keys };
+  }));
+  for (var i = 0; i < all.length; i++) if (all[i].text === text) return all[i];
+  return null;
+};
+
+// 听觉序列：数字串按「三、七、一」这样念，避免 TTS 把 371 读成一个数
+MT2.MAT.speakableSeq = function (arr) { return arr.join('、'); };
 
 // 随机字符序列：同一序列内不重复
 MT2.MAT.pickChars = function (n) {
@@ -3072,6 +3144,8 @@ MT2.dmAdaptive = function () {
   var a = MT2.db.direct.adaptive;
   if (!a.random) a.random = { len: 4, block: [] };
   if (!a.meaningful) a.meaningful = { tier: 1, block: [] };
+  if (!a.audioSeq) a.audioSeq = { len: 4, block: [] };
+  if (!a.audioText) a.audioText = { tier: 0, block: [] };
   return a;
 };
 
@@ -3085,17 +3159,20 @@ function dmPanel(name) {
 // ------------------------------------------------------------
 // 计划构建
 // ------------------------------------------------------------
-DM.SECS = { random: 22, meaningful: 62 };
+DM.SECS = { random: 22, meaningful: 62, audioSeq: 26, audioText: 66 };
 
-MT2.buildDirectPlan = function (seconds) {
-  var a = MT2.dmAdaptive(), plan = [], used = 0;
-  // 时间按 6:4 分给随机序列和有意义材料，交错排
-  var wantMeaning = Math.max(1, Math.round(seconds * 0.4 / DM.SECS.meaningful));
-  var wantRandom = Math.max(2, Math.round(seconds * 0.6 / DM.SECS.random));
+MT2.buildDirectPlan = function (seconds, modality) {
+  modality = modality || 'visual';
+  var plan = [], used = 0;
+  var seqKind = modality === 'audio' ? 'audioSeq' : 'random';
+  var txtKind = modality === 'audio' ? 'audioText' : 'meaningful';
+  // 时间按 6:4 分给序列和文本材料，交错排
+  var wantTxt = Math.max(1, Math.round(seconds * 0.4 / DM.SECS[txtKind]));
+  var wantSeq = Math.max(2, Math.round(seconds * 0.6 / DM.SECS[seqKind]));
   var r = 0, m = 0;
-  while (used < seconds && (r < wantRandom || m < wantMeaning)) {
-    if (r < wantRandom) { plan.push({ kind: 'random' }); used += DM.SECS.random; r++; }
-    if (m < wantMeaning && used < seconds) { plan.push({ kind: 'meaningful' }); used += DM.SECS.meaningful; m++; }
+  while (used < seconds && (r < wantSeq || m < wantTxt)) {
+    if (r < wantSeq) { plan.push({ kind: seqKind, modality: modality }); used += DM.SECS[seqKind]; r++; }
+    if (m < wantTxt && used < seconds) { plan.push({ kind: txtKind, modality: modality }); used += DM.SECS[txtKind]; m++; }
   }
   return plan;
 };
@@ -3116,13 +3193,22 @@ MT2.buildBaselinePlan = function () {
 DM.start = function (kind, plan, onDone) {
   DM.active = true; DM.kind = kind; DM.plan = plan; DM.idx = 0;
   DM.results = []; DM.aborted = false; DM.onDone = onDone || null;
+  // 到期的保持测试插在最前面，而且一次不超过 8 项，免得整轮都在补测
+  DM.retentionBudget = (kind === 'baseline') ? 0 : Math.min(8, MT2.dueRetention().length);
   showScreen('direct');
   DM.runTrial();
 };
 
 MT2.startDirectTraining = function (minutes) {
-  var plan = MT2.buildDirectPlan((minutes || 5) * 60);
-  DM.start('training', plan, null);
+  DM.start('training', MT2.buildDirectPlan((minutes || 5) * 60, 'visual'), null);
+};
+
+MT2.startAudioTraining = function (minutes) {
+  if (!MT2.tts.supported()) {
+    alert('听觉训练需要系统语音支持。\n\n' + MT2.tts.reason());
+    return;
+  }
+  DM.start('training', MT2.buildDirectPlan((minutes || 5) * 60, 'audio'), null);
 };
 
 MT2.startBaseline = function () {
@@ -3138,22 +3224,51 @@ MT2.startBaseline = function () {
 // 单个试次
 // ------------------------------------------------------------
 DM.runTrial = function () {
+  // 到期的延迟保持测试优先。绝不在测试前重新呈现原文，否则测的是重学不是保持。
+  while (DM.retentionBudget > 0) {
+    var due = MT2.takeRetention();
+    if (!due) break;
+    var mat = MT2.MAT.findByText(due.itemId.replace(/^txt:/, ''));
+    if (!mat) {
+      // 材料已不在库里（比如换过词库）：丢弃这条，但不算用掉一次补测机会
+      MT2.resolveRetention(due, null, 0);
+      continue;
+    }
+    DM.retentionBudget--;
+    {
+      {
+        DM.trial = {
+          kind: 'delayed', entry: due, text: mat.text, keys: mat.keys, tier: mat.tier,
+          cue: mat.text.slice(0, 3),
+          actualDelayMs: Date.now() - due.createdTs,
+          modality: due.modality || 'visual'
+        };
+        dmEl('dm-progress').textContent = '保持测试';
+        DM.recall();
+        return;
+      }
+    }
+  }
   if (DM.idx >= DM.plan.length) { DM.finish(); return; }
   var spec = DM.plan[DM.idx];
   var a = MT2.dmAdaptive();
+  var mod = spec.modality || 'visual';
   var t;
-  if (spec.kind === 'random') {
-    var len = spec.len || a.random.len;
+  if (spec.kind === 'random' || spec.kind === 'audioSeq') {
+    var isAudio = spec.kind === 'audioSeq';
+    var len = spec.len || (isAudio ? a.audioSeq.len : a.random.len);
     t = {
-      kind: 'random', len: len,
+      kind: spec.kind, modality: mod, len: len,
       exposureMs: spec.exposureMs || MT2.dmCfg('randomExposureMs'),
-      target: MT2.MAT.pickChars(len),
+      target: isAudio ? MT2.MAT.pickDigits(len) : MT2.MAT.pickChars(len),
       baseline: !!spec.baseline
     };
   } else {
-    var item = MT2.MAT.pickText(spec.tier || a.meaningful.tier);
+    var tier = spec.tier !== undefined ? spec.tier
+             : (spec.kind === 'audioText' ? a.audioText.tier : a.meaningful.tier);
+    var item = MT2.MAT.pickText(tier);
     t = {
-      kind: 'meaningful', tier: item.tier, text: item.text, keys: item.keys,
+      kind: spec.kind, modality: mod, tier: item.tier, text: item.text, keys: item.keys,
       exposureMs: Math.round(item.text.length * MT2.dmCfg('msPerChar'))
     };
   }
@@ -3162,20 +3277,52 @@ DM.runTrial = function () {
   DM.expose();
 };
 
+DM.isSeq = function (t) { return t.kind === 'random' || t.kind === 'audioSeq'; };
+DM.isText = function (t) { return t.kind === 'meaningful' || t.kind === 'audioText' || t.kind === 'delayed'; };
+
 DM.expose = function () {
   var t = DM.trial;
   dmPanel('expose');
   dmEl('dm-phase').textContent = '呈现';
+  var mat = dmEl('dm-material');
+  var fill = dmEl('dm-bar-fill');
+
+  if (t.modality === 'audio') {
+    dmEl('dm-expose-hint').textContent = '只播一遍，不能重放。听完再回忆。';
+    mat.innerHTML = '<div class="dm-audio"><div class="dm-audio-icon">🔊</div>' +
+                    '<div class="dm-audio-label">播放中…</div></div>';
+    fill.style.width = '100%';
+    fill.classList.add('indeterminate');
+    var payload = DM.isSeq(t) ? MT2.MAT.speakableSeq(t.target) : t.text;
+    t.rate = MT2.cfg('audioRate') || 1;
+    MT2.tts.speak(payload, { rate: t.rate }).then(function (ms) {
+      if (!DM.active || DM.trial !== t) return;
+      t.exposureMs = Math.round(ms);
+      fill.classList.remove('indeterminate');
+      mat.innerHTML = '';
+      DM.recall();
+    }).catch(function (e) {
+      if (!DM.active || DM.trial !== t) return;
+      fill.classList.remove('indeterminate');
+      t.voided = true; t.voidReason = e.message;
+      mat.innerHTML = '<div class="mt-warn">语音播放失败（' + e.message + '），本次作废。</div>';
+      dmEl('dm-phase').textContent = '作废';
+      setTimeout(function () {
+        if (!DM.active) return;
+        DM.idx++; DM.trial = null; DM.runTrial();
+      }, 1600);
+    });
+    return;
+  }
+
   dmEl('dm-expose-hint').textContent = DM.kind === 'baseline'
     ? '基线测试：只看，不要刻意编码'
-    : (t.kind === 'random' ? '看一遍就好，不要刻意编码' : '读一遍，不要刻意编码');
-  var mat = dmEl('dm-material');
-  if (t.kind === 'random') {
+    : (DM.isSeq(t) ? '看一遍就好，不要刻意编码' : '读一遍，不要刻意编码');
+  if (DM.isSeq(t)) {
     mat.innerHTML = t.target.map(function (c) { return '<span class="ch">' + c + '</span>'; }).join('');
   } else {
     mat.innerHTML = '<div class="txt">' + t.text + '</div>';
   }
-  var fill = dmEl('dm-bar-fill');
   fill.style.width = '100%';
   var st = performance.now(), dur = t.exposureMs;
   cancelAnimationFrame(DM.exposeRAF);
@@ -3198,15 +3345,22 @@ DM.recall = function () {
   dmEl('dm-phase').textContent = '回忆';
   t.recallStart = performance.now();
   var seqWrap = dmEl('dm-seq-input-wrap'), txt = dmEl('dm-text-input');
-  if (t.kind === 'random') {
+  if (DM.isSeq(t)) {
     seqWrap.style.display = ''; txt.style.display = 'none';
-    dmEl('dm-recall-hint').textContent = '按顺序写出刚才那 ' + t.len + ' 个字';
+    dmEl('dm-recall-hint').textContent = t.kind === 'audioSeq'
+      ? '按顺序写出刚才听到的 ' + t.len + ' 个数字'
+      : '按顺序写出刚才那 ' + t.len + ' 个字';
     var inp = dmEl('dm-seq-input');
     inp.value = ''; dmEl('dm-typed').textContent = '';
     setTimeout(function () { try { inp.focus(); } catch (e) {} }, 60);
   } else {
     seqWrap.style.display = 'none'; txt.style.display = '';
-    dmEl('dm-recall-hint').textContent = '尽量还原原文。想不起原话就写你记得的内容。';
+    if (t.kind === 'delayed') {
+      dmEl('dm-recall-hint').innerHTML = '<b>保持测试</b> · ' + MT2.delayLabel(t.actualDelayMs) +
+        '前的那一条，开头是「' + t.cue + '…」<br>写出你还记得的内容。原文不会再给你看。';
+    } else {
+      dmEl('dm-recall-hint').textContent = '尽量还原原文。想不起原话就写你记得的内容。';
+    }
     txt.value = '';
     setTimeout(function () { try { txt.focus(); } catch (e) {} }, 60);
   }
@@ -3220,9 +3374,15 @@ DM.submit = function (blank) {
   if (!DM.active || !DM.trial || DM.trial.scored) return;
   var t = DM.trial;
   t.recallMs = t.recallStart ? performance.now() - t.recallStart : null;
-  if (t.kind === 'random') {
+  if (DM.isSeq(t)) {
     t.answer = blank ? [] : DM.parseSeq(dmEl('dm-seq-input').value);
     t.score = MT2.MAT.scoreSeq(t.target, t.answer);
+  } else if (t.kind === 'delayed') {
+    t.answer = blank ? '' : dmEl('dm-text-input').value;
+    // 线索里已经给了开头几个字，把这部分从逐字分的计算里剔掉
+    t.score = MT2.MAT.scoreText(t.text.slice(t.cue.length), t.answer,
+                                t.keys.filter(function (k) { return t.text.indexOf(k) >= t.cue.length; }));
+    t.gist = null;
   } else {
     t.answer = blank ? '' : dmEl('dm-text-input').value;
     t.score = MT2.MAT.scoreText(t.text, t.answer, t.keys);
@@ -3237,7 +3397,7 @@ DM.feedback = function () {
   dmPanel('feedback');
   dmEl('dm-phase').textContent = '核对';
   var h = '';
-  if (t.kind === 'random') {
+  if (DM.isSeq(t)) {
     h += '<div class="dm-cmp">';
     for (var i = 0; i < t.len; i++) {
       var got = t.answer[i], want = t.target[i];
@@ -3259,6 +3419,10 @@ DM.feedback = function () {
     }
     dmEl('dm-gist').style.display = 'none';
   } else {
+    if (t.kind === 'delayed') {
+      h += '<div class="mt-note">' + MT2.delayLabel(t.actualDelayMs) + '前学的（实际间隔 ' +
+           MT2.fmtDelay(t.actualDelayMs) + '）</div>';
+    }
     var marked = t.text;
     t.keys.forEach(function (k) { marked = marked.split(k).join('<mark>' + k + '</mark>'); });
     h += '<div class="mt-note">原文</div><div class="dm-orig">' + marked + '</div>';
@@ -3277,7 +3441,7 @@ DM.feedback = function () {
     dmEl('dm-next-btn').style.opacity = '.45';
   }
   dmEl('dm-fb-body').innerHTML = h;
-  if (t.kind === 'random') {
+  if (DM.isSeq(t)) {
     dmEl('dm-next-btn').disabled = false;
     dmEl('dm-next-btn').style.opacity = '';
   }
@@ -3296,7 +3460,7 @@ DM.setGist = function (v) {
 DM.next = function () {
   var t = DM.trial;
   if (!t || !t.scored) return;
-  if (t.kind === 'meaningful' && t.gist === null) return;
+  if (DM.isText(t) && t.gist === null) return;
   DM.record(t);
   DM.results.push(t);
   DM.idx++;
@@ -3308,23 +3472,29 @@ DM.next = function () {
 // 记录
 // ------------------------------------------------------------
 DM.record = function (t) {
+  if (t.voided) return;
+  if (t.kind === 'delayed') {
+    MT2.resolveRetention(t.entry, {
+      keyword: t.score.keyword, verbatim: t.score.verbatim,
+      order: t.score.order, gist: t.gist
+    }, t.actualDelayMs);
+    return;
+  }
   var row = {
-    ts: Date.now(), kind: t.kind, modality: 'visual',
+    ts: Date.now(), kind: t.kind, modality: t.modality || 'visual',
     exposureMs: t.exposureMs, recallMs: Math.round(t.recallMs || 0),
     baseline: !!t.baseline, session: DM.kind
   };
-  if (t.kind === 'random') {
+  if (t.rate) row.rate = t.rate;
+  if (DM.isSeq(t)) {
     row.len = t.len;
     row.scores = { position: t.score.positionAcc, item: t.score.itemAcc, perfect: t.score.perfect ? 1 : 0 };
   } else {
     row.tier = t.tier; row.textRef = t.text.slice(0, 12);
     row.scores = { keyword: t.score.keyword, verbatim: t.score.verbatim,
                    order: t.score.order, gist: t.gist };
-    // 延迟保持队列（P4 消费）。不在这里重新呈现原文，否则测的是重学不是保持。
-    [['30s', 30e3], ['5min', 300e3], ['24h', 864e5], ['3d', 2592e5]].forEach(function (d) {
-      MT2.db.queue.push({ itemId: 'txt:' + t.text, source: 'direct', label: d[0],
-                          dueTs: Date.now() + d[1], createdTs: Date.now() });
-    });
+    // 延迟保持队列。测试时不重新呈现原文，否则测的是重学不是保持。
+    MT2.enqueueRetention('txt:' + t.text, t.modality || 'visual');
   }
   MT2.db.direct.trials.push(row);
   if (MT2.db.direct.trials.length > 3000) {
@@ -3337,26 +3507,30 @@ DM.record = function (t) {
 // 块级自适应：每 blockSize 个试次调一次，不因单次运气好坏就动难度
 DM.adapt = function (t) {
   var a = MT2.dmAdaptive();
-  if (t.kind === 'random') {
-    a.random.block.push(t.score.itemAcc);
-    if (a.random.block.length >= MT2.dmCfg('blockSize')) {
-      var m = a.random.block.reduce(function (x, y) { return x + y; }, 0) / a.random.block.length;
-      if (m > MT2.dmCfg('upAt')) a.random.len = Math.min(MT2.dmCfg('maxLen'), a.random.len + 1);
-      else if (m < MT2.dmCfg('downAt')) a.random.len = Math.max(MT2.dmCfg('minLen'), a.random.len - 1);
-      a.random.block = [];
-      a.random.lastAdjust = { ts: Date.now(), mean: m, newLen: a.random.len };
-    }
+  var lane = t.kind === 'random' ? a.random
+           : t.kind === 'audioSeq' ? a.audioSeq
+           : t.kind === 'audioText' ? a.audioText
+           : a.meaningful;
+  var val;
+  if (DM.isSeq(t)) {
+    val = t.score.itemAcc;
   } else {
-    var s = t.score;
-    var composite = ((s.keyword === null ? 0 : s.keyword) + s.verbatim + (t.gist === null ? 0 : t.gist)) / 3;
-    a.meaningful.block.push(composite);
-    if (a.meaningful.block.length >= MT2.dmCfg('blockSize')) {
-      var mm = a.meaningful.block.reduce(function (x, y) { return x + y; }, 0) / a.meaningful.block.length;
-      if (mm > MT2.dmCfg('upAt')) a.meaningful.tier = Math.min(4, a.meaningful.tier + 1);
-      else if (mm < MT2.dmCfg('downAt')) a.meaningful.tier = Math.max(1, a.meaningful.tier - 1);
-      a.meaningful.block = [];
-    }
+    var sc = t.score;
+    val = ((sc.keyword === null ? 0 : sc.keyword) + sc.verbatim + (t.gist === null ? 0 : t.gist)) / 3;
   }
+  lane.block.push(val);
+  if (lane.block.length < MT2.dmCfg('blockSize')) return;
+  var m = lane.block.reduce(function (x, y) { return x + y; }, 0) / lane.block.length;
+  if (DM.isSeq(t)) {
+    if (m > MT2.dmCfg('upAt')) lane.len = Math.min(MT2.dmCfg('maxLen'), lane.len + 1);
+    else if (m < MT2.dmCfg('downAt')) lane.len = Math.max(MT2.dmCfg('minLen'), lane.len - 1);
+  } else {
+    var floorTier = t.kind === 'audioText' ? 0 : 1;
+    if (m > MT2.dmCfg('upAt')) lane.tier = Math.min(4, lane.tier + 1);
+    else if (m < MT2.dmCfg('downAt')) lane.tier = Math.max(floorTier, lane.tier - 1);
+  }
+  lane.block = [];
+  lane.lastAdjust = { ts: Date.now(), mean: m };
 };
 
 // ------------------------------------------------------------
@@ -3384,28 +3558,47 @@ DM.finish = function () {
     }
     h += '</div>';
   } else {
-    var rand = DM.results.filter(function (t) { return t.kind === 'random'; });
-    var mean = DM.results.filter(function (t) { return t.kind === 'meaningful'; });
-    h += '<div class="mt-card"><div class="mt-card-h">本轮直接记忆</div>';
+    var rand = DM.results.filter(function (t) { return DM.isSeq(t) && !t.voided; });
+    var mean = DM.results.filter(function (t) { return (t.kind === 'meaningful' || t.kind === 'audioText') && !t.voided; });
+    var del = DM.results.filter(function (t) { return t.kind === 'delayed'; });
+    var voided = DM.results.filter(function (t) { return t.voided; });
+    var isAudio = DM.results.length && DM.results[0].modality === 'audio';
+    h += '<div class="mt-card"><div class="mt-card-h">本轮' + (isAudio ? '听觉' : '视觉') + '直接记忆</div>';
     if (rand.length) {
       var pos = rand.reduce(function (a, t) { return a + t.score.positionAcc; }, 0) / rand.length;
       var itm = rand.reduce(function (a, t) { return a + t.score.itemAcc; }, 0) / rand.length;
-      h += '<div class="mt-note">随机序列 ' + rand.length + ' 次</div><div class="mt-kpis">' +
+      var lane = isAudio ? MT2.dmAdaptive().audioSeq : MT2.dmAdaptive().random;
+      h += '<div class="mt-note">' + (isAudio ? '数字串' : '随机序列') + ' ' + rand.length + ' 次</div><div class="mt-kpis">' +
            kpi('位置正确', Math.round(pos * 100) + '%') +
-           kpi('记住的字', Math.round(itm * 100) + '%') +
-           kpi('当前长度', MT2.dmAdaptive().random.len) + '</div>';
+           kpi(isAudio ? '记住的数字' : '记住的字', Math.round(itm * 100) + '%') +
+           kpi('当前长度', lane.len) + '</div>';
     }
     if (mean.length) {
       var kw = mean.reduce(function (a, t) { return a + (t.score.keyword || 0); }, 0) / mean.length;
       var vb = mean.reduce(function (a, t) { return a + t.score.verbatim; }, 0) / mean.length;
       var gs = mean.reduce(function (a, t) { return a + (t.gist || 0); }, 0) / mean.length;
-      h += '<div class="mt-note" style="margin-top:10px">有意义材料 ' + mean.length + ' 次</div><div class="mt-kpis">' +
+      h += '<div class="mt-note" style="margin-top:10px">' + (isAudio ? '语音材料 ' : '有意义材料 ') + mean.length + ' 次</div><div class="mt-kpis">' +
            kpi('大意', Math.round(gs * 100) + '%') +
            kpi('关键词', Math.round(kw * 100) + '%') +
            kpi('逐字', Math.round(vb * 100) + '%') + '</div>';
     }
-    h += '<div class="mt-note">随机序列的进步主要停留在随机序列本身，不太会迁移到生词、诗词、歌词。' +
-         '判断整体是否变好，看有意义材料和听觉那两项。</div></div>';
+    if (del.length) {
+      var dk = del.reduce(function (a, t) { return a + (t.score.keyword || 0); }, 0) / del.length;
+      var dg = del.reduce(function (a, t) { return a + (t.gist || 0); }, 0) / del.length;
+      h += '<div class="mt-note" style="margin-top:10px">延迟保持测试 ' + del.length + ' 次（' +
+           del.map(function (t) { return MT2.delayLabel(t.actualDelayMs); }).join('、') + '）</div>' +
+           '<div class="mt-kpis">' + kpi('大意', Math.round(dg * 100) + '%') +
+           kpi('关键词', Math.round(dk * 100) + '%') + '</div>';
+    }
+    if (voided.length) {
+      h += '<div class="mt-note">' + voided.length + ' 个试次因语音播放失败作废，不计入。</div>';
+    }
+    var st = MT2.retentionStatus();
+    if (st.dueItems) h += '<div class="mt-note">还有 ' + st.dueItems + ' 项保持测试到期未测，下次训练会先补上。</div>';
+    h += '<div class="mt-note">' + (isAudio
+      ? '听一遍能留下多少，比随机序列容量更接近你实际在意的场景。'
+      : '随机序列的进步主要停留在随机序列本身，不太会迁移到生词、诗词、歌词。判断整体是否变好，看有意义材料和听觉那两项。') +
+      '</div></div>';
   }
   dmEl('dm-sum-body').innerHTML = h;
   if (DM.onDone) {
@@ -3413,7 +3606,9 @@ DM.finish = function () {
   } else {
     btns = '<button class="primary" onclick="showHome()">返回首页</button>';
     if (DM.kind === 'training') {
-      btns = '<button class="primary" onclick="MT2.startDirectTraining(5)">再来 5 分钟</button>' + btns;
+      var again = (DM.results.length && DM.results[0].modality === 'audio')
+        ? 'MT2.startAudioTraining(5)' : 'MT2.startDirectTraining(5)';
+      btns = '<button class="primary" onclick="' + again + '">再来 5 分钟</button>' + btns;
     }
   }
   dmEl('dm-sum-btns').innerHTML = btns;
@@ -3504,11 +3699,16 @@ MT2.renderCurve = function (byLen) {
 // ------------------------------------------------------------
 // 聚合（仪表盘用）
 // ------------------------------------------------------------
-MT2.directSummary = function (days) {
+MT2.directSummary = function (days, modality) {
   var cutoff = Date.now() - (days || 100000) * 86400000;
-  var tr = MT2.db.direct.trials.filter(function (t) { return t.ts >= cutoff; });
-  var rand = tr.filter(function (t) { return t.kind === 'random' && !t.baseline; });
-  var mean = tr.filter(function (t) { return t.kind === 'meaningful'; });
+  var mod = modality || 'visual';
+  var tr = MT2.db.direct.trials.filter(function (t) {
+    return t.ts >= cutoff && (t.modality || 'visual') === mod;
+  });
+  var seqKind = mod === 'audio' ? 'audioSeq' : 'random';
+  var txtKind = mod === 'audio' ? 'audioText' : 'meaningful';
+  var rand = tr.filter(function (t) { return t.kind === seqKind && !t.baseline; });
+  var mean = tr.filter(function (t) { return t.kind === txtKind; });
   function avg(a, f) { return a.length ? a.reduce(function (x, t) { return x + (f(t) || 0); }, 0) / a.length : null; }
   var byLen = {};
   rand.forEach(function (t) {
@@ -3518,14 +3718,20 @@ MT2.directSummary = function (days) {
   Object.keys(byLen).forEach(function (L) {
     byLen[L] = byLen[L].reduce(function (a, b) { return a + b; }, 0) / byLen[L].length;
   });
-  var last = MT2.db.direct.baselines.slice(-1)[0] || null;
+  var a = MT2.dmAdaptive();
+  var lane = mod === 'audio' ? a.audioSeq : a.random;
+  var tlane = mod === 'audio' ? a.audioText : a.meaningful;
+  var last = MT2.db.direct.baselines.filter(function (b) {
+    return (b.modality || 'visual') === mod;
+  }).slice(-1)[0] || null;
   return {
+    modality: mod,
     trials: tr.length, randomN: rand.length, meaningfulN: mean.length,
     positionAcc: avg(rand, function (t) { return t.scores.position; }),
     itemAcc: avg(rand, function (t) { return t.scores.item; }),
     byLen: byLen,
-    currentLen: MT2.dmAdaptive().random.len,
-    currentTier: MT2.dmAdaptive().meaningful.tier,
+    currentLen: lane.len,
+    currentTier: tlane.tier,
     gist: avg(mean, function (t) { return t.scores.gist; }),
     keyword: avg(mean, function (t) { return t.scores.keyword; }),
     verbatim: avg(mean, function (t) { return t.scores.verbatim; }),
@@ -3545,6 +3751,256 @@ document.addEventListener('keydown', function (e) {
     e.preventDefault(); DM.next();
   }
 }, true);
+
+/* ==== 37-audio.js ==== */
+// ============================================================
+// 听觉呈现 —— Web Speech API
+// Android WebView 不支持 speechSynthesis，APK 里会自动置灰并说明原因。
+// ============================================================
+MT2.tts = {
+  voices: [], voice: null, probed: false, lastError: '',
+
+  probe: function (cb) {
+    var self = this;
+    if (!('speechSynthesis' in window)) {
+      self.probed = true; self.lastError = 'no-api';
+      if (cb) cb(false); return;
+    }
+    var tries = 0;
+    (function load() {
+      var v = [];
+      try { v = window.speechSynthesis.getVoices() || []; } catch (e) { v = []; }
+      if (v.length || tries++ > 12) {
+        self.voices = v;
+        self.voice = self.pickVoice(v);
+        self.probed = true;
+        if (!v.length) self.lastError = 'no-voices';
+        else if (!self.voice) self.lastError = 'no-zh-voice';
+        else self.lastError = '';
+        if (cb) cb(!!self.voice);
+        return;
+      }
+      setTimeout(load, 120);
+    })();
+  },
+
+  pickVoice: function (v) {
+    var pref = null;
+    v.forEach(function (x) {
+      var l = (x.lang || '').toLowerCase();
+      if (!pref && (l.indexOf('zh-cn') === 0 || l.indexOf('zh_cn') === 0)) pref = x;
+    });
+    if (!pref) v.forEach(function (x) {
+      if (!pref && (x.lang || '').toLowerCase().indexOf('zh') === 0) pref = x;
+    });
+    return pref;
+  },
+
+  supported: function () { return this.probed && !!this.voice; },
+
+  reason: function () {
+    if (!('speechSynthesis' in window)) return '这个浏览器不支持 Web Speech API。Android WebView（APK 版）就属于这种情况——听觉训练请用网页版。';
+    if (this.lastError === 'no-voices') return '系统里没有可用的语音包。macOS 在「系统设置 → 辅助功能 → 朗读内容」里添加中文语音，Windows 在「时间和语言 → 语音」里添加。';
+    if (this.lastError === 'no-zh-voice') return '找到了 ' + this.voices.length + ' 个语音，但没有中文语音。需要在系统里装一个中文语音包。';
+    return '';
+  },
+
+  // 播完才 resolve。返回实际播放时长，用作曝光时长。
+  speak: function (text, opts) {
+    opts = opts || {};
+    var self = this;
+    return new Promise(function (resolve, reject) {
+      if (!self.supported()) { reject(new Error('tts-unavailable')); return; }
+      try { window.speechSynthesis.cancel(); } catch (e) {}
+      var u = new SpeechSynthesisUtterance(text);
+      u.voice = self.voice;
+      u.lang = self.voice.lang;
+      u.rate = opts.rate || 1;
+      u.pitch = 1;
+      var t0 = performance.now(), done = false;
+      var finish = function (err) {
+        if (done) return; done = true;
+        clearTimeout(guard);
+        if (err) reject(err); else resolve(performance.now() - t0);
+      };
+      u.onend = function () { finish(null); };
+      u.onerror = function (e) { finish(new Error('tts-error:' + (e && e.error || ''))); };
+      // 播放卡死时不能把试次挂起：按字数给一个宽松上限
+      var guard = setTimeout(function () {
+        try { window.speechSynthesis.cancel(); } catch (e) {}
+        finish(new Error('tts-timeout'));
+      }, Math.max(8000, text.length * 900 + 6000));
+      try { window.speechSynthesis.speak(u); }
+      catch (e) { finish(new Error('tts-throw')); }
+    });
+  },
+
+  stop: function () { try { window.speechSynthesis.cancel(); } catch (e) {} }
+};
+
+MT2.ttsTest = function () {
+  MT2.tts.probe(function (ok) {
+    if (!ok) { alert('语音不可用。\n\n' + MT2.tts.reason()); MT2.refreshAudioEntry(); return; }
+    MT2.tts.speak('这是一段中文语音测试。', { rate: MT2.cfg('audioRate') || 1 })
+      .then(function (ms) {
+        alert('语音正常。\n使用的语音：' + MT2.tts.voice.name + '（' + MT2.tts.voice.lang + '）\n' +
+              '这句话播了 ' + (ms / 1000).toFixed(1) + ' 秒。');
+        MT2.refreshAudioEntry();
+      })
+      .catch(function (e) {
+        alert('语音启动失败：' + e.message + '\n\n' + MT2.tts.reason());
+        MT2.refreshAudioEntry();
+      });
+  });
+};
+
+MT2.refreshAudioEntry = function () {
+  var e = document.getElementById('mt-audio-entry');
+  if (!e) return;
+  var d = document.getElementById('mt-audio-desc');
+  if (MT2.tts.supported()) {
+    e.classList.remove('disabled');
+    var a = MT2.dmAdaptive();
+    var ds = MT2.directSummary(30, 'audio');
+    if (d) d.textContent = '当前 ' + a.audioSeq.len + ' 位数字串 · 语音材料 T' + a.audioText.tier +
+      (ds.trials ? ' · 近 30 天 ' + ds.trials + ' 次' : ' · 还没练过');
+  } else {
+    e.classList.add('disabled');
+    if (d) d.textContent = MT2.tts.probed ? MT2.tts.reason() : '正在检测语音…';
+  }
+};
+
+/* ==== 38-retention.js ==== */
+// ============================================================
+// 延迟保持队列 —— System A / B 共用
+// 关键约束：测试前绝不重新呈现原文，否则测的是重学而不是保持。
+// 纯网页没有推送，所以做成到期队列：下次打开训练时优先插队。
+// 记录的是「真实经过时间」而不是标称档位。
+// ============================================================
+MT2.RETENTION_STEPS = [
+  { label: '30s', ms: 30e3 },
+  { label: '5min', ms: 300e3 },
+  { label: '24h', ms: 864e5 },
+  { label: '3d', ms: 2592e5 },
+  { label: '7d', ms: 6048e5 }
+];
+
+// 按真实间隔分桶。标称 24h 但实际隔了 4 天，就按 3d 记，不按 24h 记。
+MT2.RETENTION_BUCKETS = [
+  { key: 'immediate', label: '即时', max: 20e3 },
+  { key: '30s',  label: '30 秒', max: 90e3 },
+  { key: '5min', label: '5 分钟', max: 900e3 },
+  { key: '1h',   label: '1 小时', max: 6 * 3600e3 },
+  { key: '24h',  label: '24 小时', max: 48 * 3600e3 },
+  { key: '3d',   label: '3 天', max: 6 * 864e5 },
+  { key: '7d',   label: '7 天', max: 12 * 864e5 },
+  { key: 'long', label: '更久', max: Infinity }
+];
+
+MT2.delayBucket = function (ms) {
+  for (var i = 0; i < MT2.RETENTION_BUCKETS.length; i++) {
+    if (ms < MT2.RETENTION_BUCKETS[i].max) return MT2.RETENTION_BUCKETS[i];
+  }
+  return MT2.RETENTION_BUCKETS[MT2.RETENTION_BUCKETS.length - 1];
+};
+MT2.delayLabel = function (ms) { return MT2.delayBucket(ms).label; };
+
+MT2.fmtDelay = function (ms) {
+  if (ms < 90e3) return Math.round(ms / 1000) + ' 秒';
+  if (ms < 5400e3) return Math.round(ms / 60000) + ' 分钟';
+  if (ms < 48 * 3600e3) return (ms / 3600e3).toFixed(1) + ' 小时';
+  return (ms / 864e5).toFixed(1) + ' 天';
+};
+
+MT2.enqueueRetention = function (itemId, modality) {
+  var now = Date.now();
+  MT2.RETENTION_STEPS.forEach(function (st) {
+    MT2.db.queue.push({
+      itemId: itemId, source: 'direct', modality: modality || 'visual',
+      label: st.label, dueTs: now + st.ms, createdTs: now
+    });
+  });
+  if (MT2.db.queue.length > 2000) MT2.db.queue = MT2.db.queue.slice(-2000);
+};
+
+MT2.dueRetention = function (now) {
+  now = now || Date.now();
+  return MT2.db.queue.filter(function (q) { return q.dueTs <= now; });
+};
+
+// 取最该测的一条：到期最久的优先
+MT2.takeRetention = function (now) {
+  var due = MT2.dueRetention(now);
+  if (!due.length) return null;
+  due.sort(function (a, b) { return a.dueTs - b.dueTs; });
+  return due[0];
+};
+
+// 结算一条：记真实间隔，并把同一材料所有「已经到期」的条目一并清掉
+// —— 否则刚测完就会被同一材料的另一档再问一遍。未到期的保留。
+MT2.resolveRetention = function (entry, scores, actualDelayMs) {
+  var now = Date.now();
+  if (scores) {
+    if (!MT2.db.direct.retention) MT2.db.direct.retention = [];
+    var b = MT2.delayBucket(actualDelayMs);
+    MT2.db.direct.retention.push({
+      ts: now, itemId: entry.itemId, source: entry.source || 'direct',
+      modality: entry.modality || 'visual',
+      scheduled: entry.label, bucket: b.key,
+      actualDelayMs: Math.round(actualDelayMs),
+      scores: scores
+    });
+    if (MT2.db.direct.retention.length > 2000) {
+      MT2.db.direct.retention = MT2.db.direct.retention.slice(-2000);
+    }
+  }
+  MT2.db.queue = MT2.db.queue.filter(function (q) {
+    if (q.itemId !== entry.itemId) return true;
+    return q.dueTs > now;      // 未到期的留着，已到期的连同本条一起清掉
+  });
+  MT2.save();
+};
+
+// ------------------------------------------------------------
+// 保持曲线（仪表盘用）
+// ------------------------------------------------------------
+MT2.retentionCurve = function (modality) {
+  var rows = (MT2.db.direct.retention || []).filter(function (r) {
+    return !modality || r.modality === modality;
+  });
+  // 即时那一档来自原始试次本身，不在 retention 表里
+  var imm = MT2.db.direct.trials.filter(function (t) {
+    return (t.kind === 'meaningful' || t.kind === 'audioText') &&
+           (!modality || t.modality === modality);
+  });
+  var out = {};
+  function push(key, sc) {
+    if (!out[key]) out[key] = { n: 0, keyword: 0, verbatim: 0, gist: 0 };
+    out[key].n++;
+    out[key].keyword += (sc.keyword || 0);
+    out[key].verbatim += (sc.verbatim || 0);
+    out[key].gist += (sc.gist || 0);
+  }
+  imm.forEach(function (t) { push('immediate', t.scores); });
+  rows.forEach(function (r) { push(r.bucket, r.scores); });
+  Object.keys(out).forEach(function (k) {
+    var o = out[k];
+    o.keyword /= o.n; o.verbatim /= o.n; o.gist /= o.n;
+  });
+  return out;
+};
+
+MT2.retentionStatus = function () {
+  var due = MT2.dueRetention();
+  var byItem = {};
+  due.forEach(function (q) { byItem[q.itemId] = 1; });
+  return {
+    pending: MT2.db.queue.length,
+    dueEntries: due.length,
+    dueItems: Object.keys(byItem).length,
+    tested: (MT2.db.direct.retention || []).length
+  };
+};
 
 /* ==== 40-flow.js ==== */
 // ============================================================
@@ -4010,7 +4466,15 @@ MT2.runNextSegment = function () {
   var seg = MT2.session.segs[MT2.session.i];
   if (!seg) { MT2.session = { segs: [], i: -1, preset: MT2.session.preset }; showHome(); return; }
   if (seg.type === 'direct') {
-    DM.start('training', MT2.buildDirectPlan(seg.minutes * 60), MT2.runNextSegment);
+    var secs = seg.minutes * 60, plan;
+    if (MT2.tts.supported()) {
+      // 听觉是主要杠杆之一，支持语音时和视觉各占一半
+      plan = MT2.buildDirectPlan(Math.round(secs / 2), 'visual')
+        .concat(MT2.buildDirectPlan(Math.round(secs / 2), 'audio'));
+    } else {
+      plan = MT2.buildDirectPlan(secs, 'visual');
+    }
+    DM.start('training', plan, MT2.runNextSegment);
     return;
   }
   MT2.startRetrievalSegment(seg.minutes);
@@ -4040,10 +4504,13 @@ MT2.todayPlan = function () {
   if (s.wrongItems.length) bits.push('错项 ' + s.wrongItems.length);
   if (s.slowItems.length) bits.push('慢项 ' + s.slowItems.length);
   if (s.dueItems.length) bits.push('到期 ' + s.dueItems.length);
+  var rst = MT2.retentionStatus();
+  if (rst.dueItems) bits.push('保持测试 ' + rst.dueItems);
   var key = MT2.cfg('sessionLen');
   var p = MT2.SESSION_PRESETS[key] || MT2.SESSION_PRESETS['15m'];
   var segs = MT2.buildSegments(key).map(function (g) {
-    return g.type === 'direct' ? '直接记忆 ' + g.minutes + ' 分' : '提取 ' + g.minutes + ' 分';
+    if (g.type !== 'direct') return '提取 ' + g.minutes + ' 分';
+    return (MT2.tts.supported() ? '直接记忆（视觉+听觉）' : '直接记忆') + ' ' + g.minutes + ' 分';
   }).join(' + ');
   return p.label + '：' + segs + (bits.length ? ' · 优先练 ' + bits.join(' / ') : ' · 全部已掌握，随机抽查');
 };
@@ -4206,51 +4673,9 @@ MT2.renderDashboard = function () {
   h += '</div>';
 
   // ---- 直接记忆 ----
-  var dm = MT2.directSummary();
-  h += '<div class="mt-card"><div class="mt-card-h">直接记忆 <span class="mt-sub">看一遍，能留下多少</span></div>';
-  if (!dm.trials) {
-    h += '<div class="mt-empty">还没有数据。首页「直接记忆」练一轮，或先跑一次标准化基线。</div>';
-  } else {
-    var cap = dm.baseline ? dm.baseline.capacityText : '—';
-    h += '<div class="mt-kpis">' +
-      kpi('视觉容量', cap) +
-      kpi('记住的字', fmtP(dm.itemAcc)) +
-      kpi('位置正确', fmtP(dm.positionAcc)) +
-      kpi('当前长度', dm.currentLen) +
-      '</div>';
-    if (dm.meaningfulN) {
-      h += '<div class="mt-note">有意义材料（' + dm.meaningfulN + ' 次，当前难度 T' + dm.currentTier + '）</div>' +
-        '<div class="mt-kpis">' +
-        kpi('大意', fmtP(dm.gist)) +
-        kpi('关键词', fmtP(dm.keyword)) +
-        kpi('逐字', fmtP(dm.verbatim)) +
-        kpi('顺序', fmtP(dm.order)) +
-        '</div>';
-    }
-    if (Object.keys(dm.byLen).length) {
-      h += '<div class="mt-note">日常训练各长度正确率</div>' + MT2.renderCurve(dm.byLen);
-    }
-    if (dm.baseline) {
-      h += '<div class="mt-note">最近一次基线 ' + new Date(dm.baseline.ts).toISOString().slice(0, 10) +
-           '（曝光 ' + (dm.baseline.exposureMs / 1000).toFixed(1) + 's）</div>' +
-           MT2.renderCurve(dm.baseline.byLen);
-      var bl = MT2.db.direct.baselines;
-      if (bl.length >= 2) {
-        var prev = bl[bl.length - 2], cur = bl[bl.length - 1];
-        h += MT2.baselineComparable(prev, cur)
-          ? '<div class="mt-note">上次 ' + prev.capacityText + ' → 这次 ' + cur.capacityText + '</div>'
-          : '<div class="mt-warn">上一次基线的条件和这次不同，两个容量数字不可比。</div>';
-      } else {
-        h += '<div class="mt-note">只有一次基线，还没有对照。建议 7 / 30 / 90 天后同条件重跑。</div>';
-      }
-    } else {
-      h += '<div class="mt-warn">还没跑过标准化基线。日常训练的长度是自适应的，不能当基线用 —— ' +
-           '要看容量有没有变，需要固定条件重跑同一套测试。</div>';
-    }
-    h += '<div class="mt-note">随机序列的进步主要停留在随机序列本身，不太会迁移到生词、诗词、歌词。' +
-         '判断整体记忆是否变好，看有意义材料那几项。</div>';
-  }
-  h += '<button class="mt-btn" onclick="MT2.startBaseline()">跑一次标准化基线</button></div>';
+  h += MT2.renderDirectCard('visual');
+  h += MT2.renderDirectCard('audio');
+  h += MT2.renderRetentionCard();
 
   // ---- 编码效率（P5）----
   h += '<div class="mt-card mt-pending"><div class="mt-card-h">编码效率 <span class="mt-sub">需要用方法时，建立稳定记忆有多快</span></div>' +
@@ -4338,6 +4763,97 @@ MT2.mapDetail = function (code) {
   box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 };
 
+MT2.renderDirectCard = function (mod) {
+  var isA = mod === 'audio';
+  var dm = MT2.directSummary(null, mod);
+  var h = '<div class="mt-card"><div class="mt-card-h">' +
+    (isA ? '听觉直接记忆 <span class="mt-sub">听一遍，能留下多少</span>'
+         : '视觉直接记忆 <span class="mt-sub">看一遍，能留下多少</span>') + '</div>';
+
+  if (isA && !MT2.tts.supported()) {
+    h += '<div class="mt-warn">语音不可用：' + MT2.tts.reason() + '</div>';
+    if (dm.trials) h += '<div class="mt-note">已有 ' + dm.trials + ' 次历史记录。</div>';
+    return h + '<button class="mt-btn" onclick="MT2.ttsTest()">检测语音</button></div>';
+  }
+  if (!dm.trials) {
+    h += '<div class="mt-empty">还没有数据。首页' + (isA ? '「听觉记忆」' : '「直接记忆」') + '练一轮' +
+         (isA ? '。' : '，或先跑一次标准化基线。') + '</div>';
+    return h + '</div>';
+  }
+  h += '<div class="mt-kpis">' +
+    kpi(isA ? '数字串正确' : '视觉容量', isA ? fmtP(dm.itemAcc) : (dm.baseline ? dm.baseline.capacityText : '—')) +
+    kpi(isA ? '位置正确' : '记住的字', fmtP(isA ? dm.positionAcc : dm.itemAcc)) +
+    kpi('当前长度', dm.currentLen) +
+    kpi('试次', dm.trials) + '</div>';
+  if (dm.meaningfulN) {
+    h += '<div class="mt-note">' + (isA ? '语音材料' : '有意义材料') + '（' + dm.meaningfulN +
+         ' 次，当前难度 T' + dm.currentTier + '）</div><div class="mt-kpis">' +
+      kpi('大意', fmtP(dm.gist)) + kpi('关键词', fmtP(dm.keyword)) +
+      kpi('逐字', fmtP(dm.verbatim)) + kpi('顺序', fmtP(dm.order)) + '</div>';
+  }
+  if (Object.keys(dm.byLen).length) {
+    h += '<div class="mt-note">各长度正确率（自适应，不是基线）</div>' + MT2.renderCurve(dm.byLen);
+  }
+  if (!isA) {
+    if (dm.baseline) {
+      h += '<div class="mt-note">最近一次基线 ' + new Date(dm.baseline.ts).toISOString().slice(0, 10) +
+           '（曝光 ' + (dm.baseline.exposureMs / 1000).toFixed(1) + 's）</div>' + MT2.renderCurve(dm.baseline.byLen);
+      var bl = MT2.db.direct.baselines.filter(function (b) { return (b.modality || 'visual') === 'visual'; });
+      if (bl.length >= 2) {
+        var prev = bl[bl.length - 2], cur = bl[bl.length - 1];
+        h += MT2.baselineComparable(prev, cur)
+          ? '<div class="mt-note">上次 ' + prev.capacityText + ' → 这次 ' + cur.capacityText + '</div>'
+          : '<div class="mt-warn">上一次基线的条件和这次不同，两个容量数字不可比。</div>';
+      } else {
+        h += '<div class="mt-note">只有一次基线，还没有对照。建议 7 / 30 / 90 天后同条件重跑。</div>';
+      }
+    } else {
+      h += '<div class="mt-warn">还没跑过标准化基线。日常训练的长度是自适应的，不能当基线用 —— ' +
+           '要看容量有没有变，需要固定条件重跑同一套测试。</div>';
+    }
+    h += '<div class="mt-note">随机序列的进步主要停留在随机序列本身，不太会迁移到生词、诗词、歌词。' +
+         '判断整体记忆是否变好，看有意义材料和听觉那几项。</div>';
+    h += '<button class="mt-btn" onclick="MT2.startBaseline()">跑一次标准化基线</button>';
+  } else {
+    var rates = {};
+    MT2.db.direct.trials.forEach(function (t) { if (t.rate) rates[t.rate] = 1; });
+    if (Object.keys(rates).length > 1) {
+      h += '<div class="mt-warn">历史数据里出现过不同的语速（' + Object.keys(rates).join('、') +
+           '），不同语速的成绩不能直接比。</div>';
+    }
+  }
+  return h + '</div>';
+};
+
+MT2.renderRetentionCard = function () {
+  var st = MT2.retentionStatus();
+  var curve = MT2.retentionCurve();
+  var order = MT2.RETENTION_BUCKETS.filter(function (b) { return curve[b.key]; });
+  var h = '<div class="mt-card"><div class="mt-card-h">保持曲线 ' +
+          '<span class="mt-sub">学完之后还剩多少</span></div>';
+  if (!order.length) {
+    h += '<div class="mt-empty">还没有保持数据。练过有意义材料之后，30 秒 / 5 分钟 / 24 小时 / 3 天 / 7 天' +
+         '会自动排进队列，下次训练时优先补测。</div>';
+  } else {
+    h += '<div class="mt-retention">' + order.map(function (b) {
+      var c = curve[b.key];
+      return '<div class="mt-retention-row"><span class="lab">' + b.label + '</span>' +
+        '<span class="track"><span class="fill" style="width:' + (c.keyword * 100) + '%"></span></span>' +
+        '<span class="val">' + Math.round(c.keyword * 100) + '% · n=' + c.n + '</span></div>';
+    }).join('') + '</div>';
+    h += '<div class="mt-note">显示的是关键词命中率，按<b>真实经过时间</b>分桶，不是按预定档位 —— ' +
+         '标称 24 小时但实际隔了 4 天的，会记到 3 天那一桶。</div>';
+  }
+  h += '<div class="mt-kpis">' + kpi('已测', st.tested) +
+       kpi('到期待测', st.dueItems, st.dueItems ? '#f0883e' : '') +
+       kpi('排队中', st.pending) + '</div>';
+  if (st.dueItems) {
+    h += '<div class="mt-note">到期的会在下次训练开头优先补测（一轮最多 8 项）。' +
+         '测试前不会再给你看原文。</div>';
+  }
+  return h + '</div>';
+};
+
 MT2.showDash = function () { showScreen('mt-dash'); MT2.renderDashboard(); };
 
 /* ==== 90-init.js ==== */
@@ -4411,6 +4927,9 @@ MT2.injectHome = function () {
     '<div class="dm-entry" onclick="MT2.startDirectTraining(5)">' +
       '<div class="t">🧠 直接记忆训练</div>' +
       '<div class="d" id="mt-dm-desc">看一遍就回忆，不刻意编码</div></div>' +
+    '<div class="dm-entry" id="mt-audio-entry" onclick="MT2.startAudioTraining(5)">' +
+      '<div class="t">🎧 听觉记忆训练</div>' +
+      '<div class="d" id="mt-audio-desc">正在检测语音…</div></div>' +
     '<div class="dm-entry" onclick="MT2.startBaseline()">' +
       '<div class="t">📏 标准化基线测试</div>' +
       '<div class="d" id="mt-bl-desc">固定条件，7/30/90 天重跑才可比</div></div>';
@@ -4461,6 +4980,7 @@ updateHomeUI = function () {
     dmd.textContent = '当前 ' + a.random.len + ' 字序列 · 有意义材料 T' + a.meaningful.tier +
       (ds.trials ? ' · 近 30 天 ' + ds.trials + ' 次' : ' · 还没练过');
   }
+  MT2.refreshAudioEntry();
   var bld = document.getElementById('mt-bl-desc');
   if (bld) {
     var last = MT2.db.direct.baselines.slice(-1)[0];
@@ -4513,10 +5033,13 @@ finishSession = function () {
       this.value = ''; this.setAttribute('data-mode', 'merge');
     });
   }
+  MT2.tts.probe(function () { MT2.refreshAudioEntry(); });
   var cs = document.getElementById('mt-set-calib');
   if (cs) cs.value = String(MT2.cfg('calibRate'));
   var ss = document.getElementById('mt-set-speed');
   if (ss) ss.value = String(MT2.cfg('speedTarget'));
+  var rs = document.getElementById('mt-set-rate');
+  if (rs) rs.value = String(MT2.cfg('audioRate') || 1);
   showHome();
 })();
 

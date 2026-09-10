@@ -68,6 +68,9 @@ MT2.injectHome = function () {
     '<div class="dm-entry" onclick="MT2.startDirectTraining(5)">' +
       '<div class="t">🧠 直接记忆训练</div>' +
       '<div class="d" id="mt-dm-desc">看一遍就回忆，不刻意编码</div></div>' +
+    '<div class="dm-entry" id="mt-audio-entry" onclick="MT2.startAudioTraining(5)">' +
+      '<div class="t">🎧 听觉记忆训练</div>' +
+      '<div class="d" id="mt-audio-desc">正在检测语音…</div></div>' +
     '<div class="dm-entry" onclick="MT2.startBaseline()">' +
       '<div class="t">📏 标准化基线测试</div>' +
       '<div class="d" id="mt-bl-desc">固定条件，7/30/90 天重跑才可比</div></div>';
@@ -118,6 +121,7 @@ updateHomeUI = function () {
     dmd.textContent = '当前 ' + a.random.len + ' 字序列 · 有意义材料 T' + a.meaningful.tier +
       (ds.trials ? ' · 近 30 天 ' + ds.trials + ' 次' : ' · 还没练过');
   }
+  MT2.refreshAudioEntry();
   var bld = document.getElementById('mt-bl-desc');
   if (bld) {
     var last = MT2.db.direct.baselines.slice(-1)[0];
@@ -170,9 +174,12 @@ finishSession = function () {
       this.value = ''; this.setAttribute('data-mode', 'merge');
     });
   }
+  MT2.tts.probe(function () { MT2.refreshAudioEntry(); });
   var cs = document.getElementById('mt-set-calib');
   if (cs) cs.value = String(MT2.cfg('calibRate'));
   var ss = document.getElementById('mt-set-speed');
   if (ss) ss.value = String(MT2.cfg('speedTarget'));
+  var rs = document.getElementById('mt-set-rate');
+  if (rs) rs.value = String(MT2.cfg('audioRate') || 1);
   showHome();
 })();

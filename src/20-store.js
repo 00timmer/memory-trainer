@@ -32,7 +32,7 @@ function mtLoad(key, def) {
 MT2.db = {
   retrieval: mtLoad('mt_retrieval', {}),
   weakness:  mtLoad('mt_weakness', {}),
-  direct:    mtLoad('mt_direct', { trials: [], baselines: [], adaptive: {} }),
+  direct:    mtLoad('mt_direct', { trials: [], baselines: [], adaptive: {}, retention: [] }),
   encoding:  mtLoad('mt_encoding', { items: [], tta: [] }),
   queue:     mtLoad('mt_queue', []),
   used:      mtLoad('mt_materials_used', {}),
@@ -43,6 +43,7 @@ MT2.DEFAULTS = {
   calibRate: 0.20,      // 校准试次比例
   speedTarget: 2.0,     // 「正确但慢」阈值（秒）
   sessionLen: '15m',
+  audioRate: 1,
   requeueGap: [3, 5]    // 答错后隔几张重测
 };
 MT2.cfg = function (k) {

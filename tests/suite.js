@@ -7,8 +7,18 @@
   var results = [], group = '';
 
   function G(name) { group = name; }
+  var pending = [];
   function T(name, fn) {
-    try { fn(); results.push({ ok: true, g: group, n: name }); }
+    try {
+      var r = fn();
+      if (r && typeof r.then === 'function') {
+        var slot = { ok: true, g: group, n: name };
+        results.push(slot);
+        pending.push(r.catch(function (e) { slot.ok = false; slot.e = e.message; }));
+        return;
+      }
+      results.push({ ok: true, g: group, n: name });
+    }
     catch (e) {
       results.push({ ok: false, g: group, n: name, e: e.message,
                      at: (e.stack || '').split('\n')[1] || '' });
@@ -857,10 +867,361 @@
     assert(kinds.meaningful > 0, '没有有意义材料');
   });
 
+
+  // ==========================================================
+  G('P4 延迟保持队列');
+
+  function resetDirect() {
+    reset();
+    MT2.db.direct = { trials: [], baselines: [], adaptive: {}, retention: [] };
+    MT2.db.queue = [];
+  }
+
+  T('学过的有意义材料会排进五档保持队列', function () {
+    resetDirect();
+    DM.kind = 'training';
+    DM.record({ kind: 'meaningful', modality: 'visual', tier: 1, text: '门口那棵老槐树昨夜被风吹断了。',
+                keys: ['门口'], exposureMs: 4000, recallMs: 9000, gist: 1,
+                score: { keyword: 1, verbatim: 0.8, order: 1 } });
+    eq(MT2.db.queue.length, 5, '五档没排全');
+    var labels = MT2.db.queue.map(function (q) { return q.label; }).join(',');
+    eq(labels, '30s,5min,24h,3d,7d');
+    MT2.db.queue.forEach(function (q) { assert(q.dueTs > q.createdTs, '到期时间不在曝光之后'); });
+  });
+
+  T('随机序列不排保持队列', function () {
+    resetDirect();
+    DM.kind = 'training';
+    DM.record({ kind: 'random', modality: 'visual', len: 4, exposureMs: 3000, recallMs: 5000,
+                score: { positionAcc: 1, itemAcc: 1, perfect: true } });
+    eq(MT2.db.queue.length, 0, '序列试次也排了保持测试');
+  });
+
+  T('只有到期的才会被取出来', function () {
+    resetDirect();
+    var now = Date.now();
+    MT2.db.queue = [
+      { itemId: 'txt:A', label: '24h', dueTs: now + 3600e3, createdTs: now },
+      { itemId: 'txt:B', label: '5min', dueTs: now - 60e3, createdTs: now - 360e3 }
+    ];
+    eq(MT2.dueRetention().length, 1);
+    eq(MT2.takeRetention().itemId, 'txt:B');
+  });
+
+  T('到期最久的优先补测', function () {
+    resetDirect();
+    var now = Date.now();
+    MT2.db.queue = [
+      { itemId: 'txt:A', label: '5min', dueTs: now - 60e3, createdTs: now - 360e3 },
+      { itemId: 'txt:B', label: '24h', dueTs: now - 3 * 864e5, createdTs: now - 4 * 864e5 }
+    ];
+    eq(MT2.takeRetention().itemId, 'txt:B', '积压最久的没有优先');
+  });
+
+  T('按真实经过时间分桶，不按标称档位', function () {
+    eq(MT2.delayBucket(25e3).key, '30s');
+    eq(MT2.delayBucket(400e3).key, '5min');
+    eq(MT2.delayBucket(30 * 3600e3).key, '24h');
+    // 标称 24h 但实际隔了 4 天 —— 必须记到 3d 那一桶
+    eq(MT2.delayBucket(4 * 864e5).key, '3d', '迟到的测试还按 24h 记');
+    eq(MT2.delayBucket(30 * 864e5).key, 'long');
+  });
+
+  T('结算记的是真实间隔和真实桶位', function () {
+    resetDirect();
+    var now = Date.now();
+    var entry = { itemId: 'txt:A', source: 'direct', modality: 'visual',
+                  label: '24h', dueTs: now - 10, createdTs: now - 4 * 864e5 };
+    MT2.db.queue = [entry];
+    MT2.resolveRetention(entry, { keyword: 0.6, verbatim: 0.2, order: 1, gist: 0.5 }, 4 * 864e5);
+    var r = MT2.db.direct.retention[0];
+    eq(r.scheduled, '24h', '没保留标称档位');
+    eq(r.bucket, '3d', '桶位没按真实间隔算');
+    near(r.actualDelayMs / 864e5, 4, 0.01, '真实间隔');
+  });
+
+  T('测完一项后，同一材料已到期的其它档位一并清掉，未到期的保留', function () {
+    resetDirect();
+    var now = Date.now();
+    var due1 = { itemId: 'txt:A', label: '30s', dueTs: now - 5000, createdTs: now - 40e3 };
+    var due2 = { itemId: 'txt:A', label: '5min', dueTs: now - 100, createdTs: now - 40e3 };
+    var future = { itemId: 'txt:A', label: '24h', dueTs: now + 864e5, createdTs: now - 40e3 };
+    var other = { itemId: 'txt:B', label: '30s', dueTs: now - 5000, createdTs: now - 40e3 };
+    MT2.db.queue = [due1, due2, future, other];
+    MT2.resolveRetention(due1, { keyword: 1, verbatim: 1, order: 1, gist: 1 }, 40e3);
+    var ids = MT2.db.queue.map(function (q) { return q.itemId + ':' + q.label; });
+    assert(ids.indexOf('txt:A:24h') !== -1, '未到期的档位被误删');
+    eq(ids.indexOf('txt:A:5min'), -1, '同材料已到期的档位没有一起清掉');
+    eq(ids.indexOf('txt:A:30s'), -1, '刚测过的条目还留在队列里');
+    assert(ids.indexOf('txt:B:30s') !== -1, '别的材料被误删');
+  });
+
+  T('保持测试不会再往队列里加新条目', function () {
+    resetDirect();
+    var now = Date.now();
+    var entry = { itemId: 'txt:A', label: '30s', dueTs: now - 100, createdTs: now - 40e3 };
+    MT2.db.queue = [entry];
+    DM.record({ kind: 'delayed', entry: entry, text: 'A', keys: [], cue: 'A',
+                actualDelayMs: 40e3, gist: 1, score: { keyword: 1, verbatim: 1, order: 1 } });
+    eq(MT2.db.queue.length, 0, '保持测试自己又排了一轮，会无限循环');
+    eq(MT2.db.direct.retention.length, 1);
+  });
+
+  T('保持测试不写进普通试次表（不然会污染即时正确率）', function () {
+    resetDirect();
+    var now = Date.now();
+    var entry = { itemId: 'txt:A', label: '24h', dueTs: now - 100, createdTs: now - 864e5 };
+    MT2.db.queue = [entry];
+    DM.record({ kind: 'delayed', entry: entry, text: 'A', keys: [], cue: 'A',
+                actualDelayMs: 864e5, gist: 0, score: { keyword: 0.2, verbatim: 0.1, order: null } });
+    eq(MT2.db.direct.trials.length, 0, '延迟试次混进了即时试次表');
+  });
+
+  T('保持曲线按桶聚合，即时那一档来自原始试次', function () {
+    resetDirect();
+    DM.kind = 'training';
+    DM.record({ kind: 'meaningful', modality: 'visual', tier: 1, text: '门口那棵老槐树昨夜被风吹断了。',
+                keys: ['门口'], exposureMs: 4000, recallMs: 9000, gist: 1,
+                score: { keyword: 0.9, verbatim: 0.8, order: 1 } });
+    MT2.db.direct.retention.push({ ts: Date.now(), itemId: 'txt:X', modality: 'visual',
+      scheduled: '24h', bucket: '24h', actualDelayMs: 864e5,
+      scores: { keyword: 0.5, verbatim: 0.2, order: 1, gist: 0.5 } });
+    var c = MT2.retentionCurve();
+    near(c.immediate.keyword, 0.9, 0.001, '即时档');
+    near(c['24h'].keyword, 0.5, 0.001, '24 小时档');
+    eq(c.immediate.n, 1);
+  });
+
+  T('保持测试一轮最多补 8 项', function () {
+    resetDirect();
+    var now = Date.now();
+    MT2.MAT.TEXTS.slice(0, 20).forEach(function (m) {
+      MT2.db.queue.push({ itemId: 'txt:' + m.text, label: '24h', dueTs: now - 1000, createdTs: now - 864e5 });
+    });
+    DM.start('training', [], null);
+    eq(DM.trial.kind, 'delayed', '没有开始补测');
+    eq(DM.retentionBudget, 7, '第一项补测后预算应该只减一');
+    DM.active = false;
+  });
+
+  T('材料已不在库里的队列条目被丢弃，但不占用补测名额', function () {
+    resetDirect();
+    var now = Date.now();
+    MT2.db.queue.push({ itemId: 'txt:早就删掉的材料', label: '24h', dueTs: now - 1000, createdTs: now - 864e5 });
+    MT2.db.queue.push({ itemId: 'txt:' + MT2.MAT.TEXTS[0].text, label: '24h', dueTs: now - 900, createdTs: now - 864e5 });
+    DM.start('training', [], null);
+    eq(DM.trial.kind, 'delayed');
+    eq(DM.trial.text, MT2.MAT.TEXTS[0].text, '没有跳过失效条目继续补测');
+    eq(DM.retentionBudget, 1, '失效条目占用了补测名额');
+    DM.active = false;
+  });
+
+  T('基线测试不补保持测试', function () {
+    resetDirect();
+    var now = Date.now();
+    MT2.db.queue.push({ itemId: 'txt:A', label: '24h', dueTs: now - 1000, createdTs: now - 864e5 });
+    DM.start('baseline', [], null);
+    eq(DM.retentionBudget, 0, '基线被保持测试插队，条件就不标准了');
+    DM.active = false;
+  });
+
+  T('保持测试给的线索不算进逐字分', function () {
+    resetDirect();
+    var mat = MT2.MAT.TEXTS[0];
+    var now = Date.now();
+    var entry = { itemId: 'txt:' + mat.text, label: '24h', dueTs: now - 10, createdTs: now - 864e5 };
+    MT2.db.queue = [entry];
+    DM.start('training', [], null);
+    DM.retentionBudget = 1;
+    DM.runTrial();
+    eq(DM.trial.kind, 'delayed', '没有取到保持测试');
+    eq(DM.trial.cue, mat.text.slice(0, 3));
+    // 落在线索里的关键词要从分母里剔掉，否则白送一个命中
+    var inCue = mat.keys.filter(function (k) { return mat.text.indexOf(k) < DM.trial.cue.length; });
+    assert(inCue.length > 0, '这条材料的第一个关键词不在线索里，换一条来测');
+    // 只把线索那三个字原样写回去，逐字分应该是 0，不是「答对了开头」
+    document.getElementById('dm-text-input').value = DM.trial.cue;
+    DM.submit();
+    eq(DM.trial.score.keysTotal, mat.keys.length - inCue.length, '线索里的关键词还算在分母里');
+    assert(DM.trial.score.verbatim < 0.05,
+           '只抄线索就拿了 ' + DM.trial.score.verbatim.toFixed(2) + ' 的逐字分');
+    eq(DM.trial.score.keysHit, 0, '抄线索却算命中了关键词');
+    DM.active = false;
+  });
+
+  // ==========================================================
+  G('P4 听觉直接记忆');
+
+  var realSpeak = MT2.tts.speak, realSupported = MT2.tts.supported;
+  function fakeTTS(opts) {
+    opts = opts || {};
+    MT2.tts.spoken = [];
+    MT2.tts.supported = function () { return opts.supported !== false; };
+    // 同步 thenable：真 Promise 会跑到 dump-dom 之后，测试就抓不到了
+    MT2.tts.pendingCb = null;
+    MT2.tts.flush = function () { var c = MT2.tts.pendingCb; MT2.tts.pendingCb = null; if (c) c(); };
+    MT2.tts.speak = function (text, o) {
+      MT2.tts.spoken.push({ text: text, rate: o && o.rate });
+      var fail = opts.fail, val = text.length * 200, manual = opts.manual;
+      if (manual) {
+        return { then: function (onOk) {
+          MT2.tts.pendingCb = function () { if (!fail && onOk) onOk(val); };
+          return { catch: function (onErr) {
+            if (fail) MT2.tts.pendingCb = function () { onErr(new Error('tts-error:fake')); };
+          } };
+        } };
+      }
+      return {
+        then: function (onOk) {
+          if (!fail && onOk) onOk(val);
+          return { catch: function (onErr) { if (fail && onErr) onErr(new Error('tts-error:fake')); } };
+        }
+      };
+    };
+  }
+  function realTTS() { MT2.tts.speak = realSpeak; MT2.tts.supported = realSupported; }
+
+  T('听觉呈现全程不显示原文', function () {
+    resetDirect(); fakeTTS({ manual: true });
+    DM.start('training', [{ kind: 'audioText', modality: 'audio', tier: 0 }], null);
+    var text = DM.trial.text;
+    var mat = document.getElementById('dm-material').textContent;
+    eq(mat.indexOf(text), -1, '播放时把原文显示出来了，那就不是听觉测试');
+    assert(mat.indexOf('播放中') > -1, '没有播放提示');
+    eq(MT2.tts.spoken.length, 1, '没有调用语音');
+    eq(MT2.tts.spoken[0].text, text);
+    MT2.tts.flush();          // 语音播完
+    eq(document.getElementById('dm-recall').style.display, 'block', '播完没有进回忆');
+    var whole = document.getElementById('screen-direct').textContent;
+    eq(whole.indexOf(text), -1, '回忆阶段把原文露出来了');
+    DM.active = false; realTTS();
+  });
+
+  T('数字串按「三、七」这样念，避免被读成一个数', function () {
+    eq(MT2.MAT.speakableSeq(['3', '7', '1']), '3、7、1');
+    resetDirect(); fakeTTS();
+    DM.start('training', [{ kind: 'audioSeq', modality: 'audio', len: 4 }], null);
+    eq(MT2.tts.spoken[0].text, DM.trial.target.join('、'));
+    DM.active = false; realTTS();
+  });
+
+  T('回忆阶段没有重放按钮', function () {
+    resetDirect(); fakeTTS();
+    DM.start('training', [{ kind: 'audioSeq', modality: 'audio', len: 4 }], null);
+    DM.recall();
+    var btns = document.getElementById('dm-recall').querySelectorAll('button');
+    eq(btns.length, 2, '回忆面板多了按钮，可能是重放');
+    var txt = document.getElementById('dm-recall').textContent;
+    eq(txt.indexOf('重放'), -1, '出现了重放');
+    eq(txt.indexOf('再听'), -1, '出现了再听一遍');
+    DM.active = false; realTTS();
+  });
+
+  T('语音播放失败的试次作废，不记成答错', function () {
+    resetDirect(); fakeTTS({ fail: true });
+    DM.kind = 'training';
+    DM.start('training', [{ kind: 'audioSeq', modality: 'audio', len: 4 }], null);
+    var t = DM.trial;
+    eq(t.voided, true, '失败的试次没有标记作废');
+    assert(document.getElementById('dm-material').textContent.indexOf('失败') > -1, '没有告诉用户为什么作废');
+    DM.record(t);
+    eq(MT2.db.direct.trials.length, 0, '作废的试次被记成了成绩');
+    eq(MT2.db.queue.length, 0, '作废的试次还排了保持测试');
+    DM.active = false; realTTS();
+  });
+
+  T('语音不可用时拒绝开始，并说明原因', function () {
+    resetDirect(); fakeTTS({ supported: false });
+    var alerted = null, oldAlert = window.alert;
+    window.alert = function (m) { alerted = m; };
+    MT2.startAudioTraining(5);
+    window.alert = oldAlert;
+    assert(alerted && alerted.indexOf('语音') > -1, '没有提示语音不可用');
+    eq(DM.active, false, '语音不可用却开始了训练');
+    realTTS();
+  });
+
+  T('听觉与视觉分开记账', function () {
+    resetDirect();
+    DM.kind = 'training';
+    DM.record({ kind: 'random', modality: 'visual', len: 5, exposureMs: 3000, recallMs: 4000,
+                score: { positionAcc: 1, itemAcc: 1, perfect: true } });
+    DM.record({ kind: 'audioSeq', modality: 'audio', len: 4, rate: 1, exposureMs: 2500, recallMs: 4000,
+                score: { positionAcc: 0.5, itemAcc: 0.5, perfect: false } });
+    var v = MT2.directSummary(null, 'visual'), a = MT2.directSummary(null, 'audio');
+    eq(v.trials, 1); eq(a.trials, 1);
+    near(v.itemAcc, 1, 0.001, '视觉成绩被听觉污染');
+    near(a.itemAcc, 0.5, 0.001, '听觉成绩被视觉污染');
+  });
+
+  T('听觉与视觉的难度阶梯互不影响', function () {
+    resetDirect();
+    DM.kind = 'training';
+    MT2.dmAdaptive().random.len = 4;
+    MT2.dmAdaptive().audioSeq.len = 4;
+    for (var i = 0; i < 5; i++) {
+      DM.adapt({ kind: 'audioSeq', modality: 'audio', score: { itemAcc: 1 } });
+    }
+    eq(MT2.dmAdaptive().audioSeq.len, 5, '听觉难度没升');
+    eq(MT2.dmAdaptive().random.len, 4, '听觉的成绩把视觉难度也拉上去了');
+  });
+
+  T('语音材料从短语档起步，不会降到句子档以下的负数', function () {
+    resetDirect();
+    DM.kind = 'training';
+    MT2.dmAdaptive().audioText.tier = 0;
+    for (var i = 0; i < 10; i++) {
+      DM.adapt({ kind: 'audioText', modality: 'audio', gist: 0,
+                 score: { keyword: 0, verbatim: 0, order: 0 } });
+    }
+    eq(MT2.dmAdaptive().audioText.tier, 0, '听觉文本档位掉到 0 以下了');
+    MT2.dmAdaptive().meaningful.tier = 1;
+    for (var i = 0; i < 10; i++) {
+      DM.adapt({ kind: 'meaningful', modality: 'visual', gist: 0,
+                 score: { keyword: 0, verbatim: 0, order: 0 } });
+    }
+    eq(MT2.dmAdaptive().meaningful.tier, 1, '视觉文本档位不该降到短语档');
+  });
+
+  T('语速被记录下来，混用时仪表盘要警告', function () {
+    resetDirect(); fakeTTS();
+    DM.kind = 'training';
+    DM.record({ kind: 'audioSeq', modality: 'audio', len: 4, rate: 1, exposureMs: 2000, recallMs: 3000,
+                score: { positionAcc: 1, itemAcc: 1, perfect: true } });
+    eq(MT2.db.direct.trials[0].rate, 1, '没记语速');
+    DM.record({ kind: 'audioSeq', modality: 'audio', len: 4, rate: 1.5, exposureMs: 1500, recallMs: 3000,
+                score: { positionAcc: 1, itemAcc: 1, perfect: true } });
+    var html = MT2.renderDirectCard('audio');
+    assert(html.indexOf('不同的语速') > -1, '混用语速没有警告');
+    realTTS();
+  });
+
+  T('今日训练在语音可用时把直接记忆段一分为二', function () {
+    resetDirect(); fakeTTS();
+    MT2.session = { segs: MT2.buildSegments('15m'), i: -1, preset: '15m' };
+    MT2.runNextSegment();
+    var mods = {};
+    DM.plan.forEach(function (p) { mods[p.modality] = 1; });
+    assert(mods.visual && mods.audio, '语音可用时听觉没有排进今日训练');
+    DM.active = false; realTTS();
+  });
+
+  T('语音不可用时今日训练只排视觉，不报错', function () {
+    resetDirect(); fakeTTS({ supported: false });
+    MT2.session = { segs: MT2.buildSegments('15m'), i: -1, preset: '15m' };
+    MT2.runNextSegment();
+    var mods = {};
+    DM.plan.forEach(function (p) { mods[p.modality] = 1; });
+    assert(mods.visual, '没有视觉试次');
+    assert(!mods.audio, '语音不可用却排了听觉试次');
+    DM.active = false; realTTS();
+  });
+
   // ==========================================================
   fakeToday(null);
   reset();
 
+  function report() {
   var pass = results.filter(function (r) { return r.ok; }).length;
   var fail = results.length - pass;
   var lines = [], lastG = '';
@@ -876,4 +1237,6 @@
   pre.textContent = lines.join('\n');
   document.body.appendChild(pre);
   window.MT_TEST_FAILED = fail;
+  }
+  if (pending.length) Promise.all(pending).then(report); else report();
 })();

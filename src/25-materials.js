@@ -19,6 +19,28 @@ MT2.MAT.CHARS = (
   '龙虎狮象狼熊鹿兔猫狗猪鸡鸭鹅鸽雀鹰蛇蛙蝶蜂蚁'
 ).split('');
 
+// 听觉阶梯最低一档：短语（5–15 字）。听一遍就复述，先从这里起步。
+MT2.MAT.PHRASES = [
+  { text: '窗户开着', keys: ['窗户', '开'] },
+  { text: '第三个抽屉', keys: ['第三个', '抽屉'] },
+  { text: '明天早上八点', keys: ['明天', '早上', '八点'] },
+  { text: '两瓶醋一袋盐', keys: ['两瓶醋', '一袋盐'] },
+  { text: '红色的旧自行车', keys: ['红色', '旧', '自行车'] },
+  { text: '楼下第二个路口右转', keys: ['楼下', '第二个路口', '右转'] },
+  { text: '把钥匙放在门垫下面', keys: ['钥匙', '门垫', '下面'] },
+  { text: '周四下午三点半开会', keys: ['周四', '下午三点半', '开会'] },
+  { text: '五斤面粉和三个鸡蛋', keys: ['五斤面粉', '三个鸡蛋'] },
+  { text: '他住在七楼靠东那间', keys: ['七楼', '靠东', '那间'] },
+  { text: '车停在地下二层的角落', keys: ['地下二层', '角落'] },
+  { text: '先关水阀再拧螺丝', keys: ['先关水阀', '再拧螺丝'] },
+  { text: '收据夹在蓝色的本子里', keys: ['收据', '蓝色', '本子'] },
+  { text: '票已经改签到晚班车', keys: ['票', '改签', '晚班车'] },
+  { text: '院子里有三棵柿子树', keys: ['院子', '三棵', '柿子树'] },
+  { text: '密码是他生日倒过来', keys: ['密码', '生日', '倒过来'] },
+  { text: '面要煮满六分钟', keys: ['面', '六分钟'] },
+  { text: '货在周一之前必须发出', keys: ['货', '周一之前', '发出'] }
+];
+
 // 有意义材料：keys 是关键词，用来自动打「关键词」和「顺序」两项分
 // tier 1 短句 / 2 长句 / 3 两句 / 4 短段
 MT2.MAT.TEXTS = [
@@ -64,7 +86,18 @@ MT2.MAT.TEXTS = [
 // ------------------------------------------------------------
 // 取材料：优先没用过的；全部用过后重新开放，但避开最近 N 次用过的
 // ------------------------------------------------------------
+// tier 0 = 短语（听觉阶梯起点），1–4 = 句子/段落
 MT2.MAT.pickText = function (tier) {
+  if (tier === 0) {
+    var ph = MT2.MAT.PHRASES.map(function (x) {
+      return { tier: 0, text: x.text, keys: x.keys };
+    });
+    var freshP = ph.filter(function (t) { return !MT2.db.used['txt:' + t.text]; });
+    var useP = freshP.length ? freshP : ph;
+    var pick = useP[Math.floor(Math.random() * useP.length)];
+    MT2.db.used['txt:' + pick.text] = Date.now();
+    return pick;
+  }
   var pool = MT2.MAT.TEXTS.filter(function (t) { return t.tier === tier; });
   if (!pool.length) pool = MT2.MAT.TEXTS.slice();
   var fresh = pool.filter(function (t) { return !MT2.db.used['txt:' + t.text]; });
@@ -77,10 +110,25 @@ MT2.MAT.pickText = function (tier) {
 };
 
 MT2.MAT.freshTextCount = function (tier) {
+  if (tier === 0) {
+    return MT2.MAT.PHRASES.filter(function (t) { return !MT2.db.used['txt:' + t.text]; }).length;
+  }
   return MT2.MAT.TEXTS.filter(function (t) {
     return t.tier === tier && !MT2.db.used['txt:' + t.text];
   }).length;
 };
+
+// 按原文找回材料（延迟保持测试要重新取 keys，但绝不重新呈现原文）
+MT2.MAT.findByText = function (text) {
+  var all = MT2.MAT.TEXTS.concat(MT2.MAT.PHRASES.map(function (x) {
+    return { tier: 0, text: x.text, keys: x.keys };
+  }));
+  for (var i = 0; i < all.length; i++) if (all[i].text === text) return all[i];
+  return null;
+};
+
+// 听觉序列：数字串按「三、七、一」这样念，避免 TTS 把 371 读成一个数
+MT2.MAT.speakableSeq = function (arr) { return arr.join('、'); };
 
 // 随机字符序列：同一序列内不重复
 MT2.MAT.pickChars = function (n) {
