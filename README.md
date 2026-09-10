@@ -126,7 +126,7 @@ cue 出现 → 想到答案按键（延迟在此冻结）→ 显示答案 → �
 
 ## 测试
 
-`tests/suite.js` 是 46 条断言的自测套件，`run-tests.sh` 把它注入构建产物、
+`tests/suite.js` 是 96 条断言的自测套件，`run-tests.sh` 把它注入构建产物、
 在 headless Chrome 里跑一遍、有任何 FAIL 就以非零码退出。覆盖：
 
 | 分组 | 内容 |
