@@ -1,7 +1,7 @@
 // ============================================================
 // 接线：新屏幕路由 / 首页改版 / 初始化
 // ============================================================
-MT2.SCREENS = ['home','training','summary','browse','stats','seq-memorize','seq-recall','mt-dash','mt-map'];
+MT2.SCREENS = ['home','training','summary','browse','stats','seq-memorize','seq-recall','mt-dash','mt-map','direct'];
 
 showScreen = function (name) {
   currentScreen = name;
@@ -16,6 +16,7 @@ var _mtOrigHandleBack = handleBack;
 handleBack = function () {
   var modal = document.querySelector('.modal-overlay.show');
   if (modal) { modal.classList.remove('show'); return true; }
+  if (currentScreen === 'direct') { DM.quit(); return true; }
   if (currentScreen === 'mt-map') { MT2.showDash(); return true; }
   if (currentScreen === 'mt-dash') { showHome(); return true; }
   return _mtOrigHandleBack();
@@ -59,6 +60,19 @@ MT2.injectHome = function () {
     };
   });
 
+  // 直接记忆入口
+  var dmWrap = document.createElement('div');
+  dmWrap.id = 'mt-dm-entries';
+  dmWrap.innerHTML =
+    '<div class="mt-fold-h" style="cursor:default">直接记忆（System A）</div>' +
+    '<div class="dm-entry" onclick="MT2.startDirectTraining(5)">' +
+      '<div class="t">🧠 直接记忆训练</div>' +
+      '<div class="d" id="mt-dm-desc">看一遍就回忆，不刻意编码</div></div>' +
+    '<div class="dm-entry" onclick="MT2.startBaseline()">' +
+      '<div class="t">📏 标准化基线测试</div>' +
+      '<div class="d" id="mt-bl-desc">固定条件，7/30/90 天重跑才可比</div></div>';
+  modes.insertBefore(dmWrap, card.nextSibling);
+
   // 原有模式折叠
   var firstTitle = modes.querySelector('.section-title');
   if (firstTitle) {
@@ -96,6 +110,21 @@ updateHomeUI = function () {
   var s = MT2.deckSummary(currentDeckId, codes, 'fwd');
   var wc = document.getElementById('home-weak-count');
   if (wc) wc.textContent = s.wrongItems.length + s.slowItems.length;
+  // 直接记忆入口的说明
+  var dmd = document.getElementById('mt-dm-desc');
+  if (dmd) {
+    var a = MT2.dmAdaptive();
+    var ds = MT2.directSummary(30);
+    dmd.textContent = '当前 ' + a.random.len + ' 字序列 · 有意义材料 T' + a.meaningful.tier +
+      (ds.trials ? ' · 近 30 天 ' + ds.trials + ' 次' : ' · 还没练过');
+  }
+  var bld = document.getElementById('mt-bl-desc');
+  if (bld) {
+    var last = MT2.db.direct.baselines.slice(-1)[0];
+    bld.textContent = last
+      ? '上次 ' + new Date(last.ts).toISOString().slice(0, 10) + '：容量 ' + last.capacityText
+      : '还没跑过 —— 没有基线就没有对照起点';
+  }
 };
 
 // 结束页：补充本轮的新口径指标

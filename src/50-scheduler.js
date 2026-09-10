@@ -71,16 +71,45 @@ MT2.buildTodayDeck = function (deckId, codes, budgetItems) {
   return shuffle(picked.slice(0, budgetItems));
 };
 
+// 一次「今日训练」由若干段组成。直接记忆在前（新材料需要清醒的注意力），
+// 提取自动化在后。System B 接入后插在两者之间。
+MT2.session = { segs: [], i: -1, preset: '15m' };
+
+MT2.buildSegments = function (preset) {
+  var p = MT2.SESSION_PRESETS[preset] || MT2.SESSION_PRESETS['15m'];
+  var segs = [];
+  // 5 分钟速练不放直接记忆：一个有意义材料试次就要一分钟，塞不下
+  if (p.minutes >= 15) segs.push({ type: 'direct', minutes: 5 });
+  segs.push({ type: 'retrieval', minutes: p.minutes - (segs.length ? 5 : 0) });
+  return segs;
+};
+
 MT2.startToday = function (preset) {
   preset = preset || MT2.cfg('sessionLen');
-  var p = MT2.SESSION_PRESETS[preset] || MT2.SESSION_PRESETS['15m'];
   MT2.setCfg('sessionLen', preset);
   var codes = getFilteredCodes();
   if (!codes.length) { alert('当前范围内没有编码'); return; }
+  MT2.session = { segs: MT2.buildSegments(preset), i: -1, preset: preset };
+  MT2.runNextSegment();
+};
+
+MT2.runNextSegment = function () {
+  MT2.session.i++;
+  var seg = MT2.session.segs[MT2.session.i];
+  if (!seg) { MT2.session = { segs: [], i: -1, preset: MT2.session.preset }; showHome(); return; }
+  if (seg.type === 'direct') {
+    DM.start('training', MT2.buildDirectPlan(seg.minutes * 60), MT2.runNextSegment);
+    return;
+  }
+  MT2.startRetrievalSegment(seg.minutes);
+};
+
+MT2.startRetrievalSegment = function (minutes) {
+  var codes = getFilteredCodes();
   var per = MT2.estimateSecsPerItem(currentDeckId, codes);
-  var budget = Math.max(8, Math.round(p.minutes * 60 / per));
+  var budget = Math.max(8, Math.round(minutes * 60 / per));
   var d = MT2.buildTodayDeck(currentDeckId, codes, budget);
-  if (!d.length) { alert('没有可练的内容'); return; }
+  if (!d.length) { alert('没有可练的内容'); showHome(); return; }
   currentMode = 'today'; lastMode = 'today';
   deck = d;
   lastDeck = deck.map(function (c) { return { type: c.type, codes: c.codes.slice() }; });
@@ -99,8 +128,12 @@ MT2.todayPlan = function () {
   if (s.wrongItems.length) bits.push('错项 ' + s.wrongItems.length);
   if (s.slowItems.length) bits.push('慢项 ' + s.slowItems.length);
   if (s.dueItems.length) bits.push('到期 ' + s.dueItems.length);
-  var p = MT2.SESSION_PRESETS[MT2.cfg('sessionLen')] || MT2.SESSION_PRESETS['15m'];
-  return p.label + (bits.length ? ' · 优先练 ' + bits.join(' / ') : ' · 全部已掌握，随机抽查');
+  var key = MT2.cfg('sessionLen');
+  var p = MT2.SESSION_PRESETS[key] || MT2.SESSION_PRESETS['15m'];
+  var segs = MT2.buildSegments(key).map(function (g) {
+    return g.type === 'direct' ? '直接记忆 ' + g.minutes + ' 分' : '提取 ' + g.minutes + ' 分';
+  }).join(' + ');
+  return p.label + '：' + segs + (bits.length ? ' · 优先练 ' + bits.join(' / ') : ' · 全部已掌握，随机抽查');
 };
 
 // ------------------------------------------------------------

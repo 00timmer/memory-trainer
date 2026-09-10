@@ -262,7 +262,7 @@ body { font-family: -apple-system, 'PingFang SC', sans-serif; background: #0f0f1
   .browse-grid { grid-template-columns: repeat(4, 1fr); }
 }
 /* ===== MT2 三系统重构样式 ===== */
-.mt-page { padding: 0 0 40px; }
+.mt-page { display:none; max-width: 600px; margin: 0 auto; padding: 20px 0 40px; }
 .mt-card { background:#232733; border-radius:14px; padding:14px; margin:12px 10px; }
 .mt-card-h { font-size:15px; font-weight:600; margin-bottom:10px; }
 .mt-card-h .mt-sub { font-size:12px; color:#8a90a0; font-weight:400; margin-left:6px; }
@@ -333,6 +333,60 @@ body { font-family: -apple-system, 'PingFang SC', sans-serif; background: #0f0f1
 .mt-today-lens button.on { background:rgba(255,255,255,.30); font-weight:600; }
 .mt-fold { margin:0 10px 10px; }
 .mt-fold-h { font-size:13px; color:#8a90a0; padding:9px 2px; cursor:pointer; user-select:none; }
+
+/* ===== System A 直接记忆 ===== */
+.dm-panel { padding: 0 20px; }
+.dm-hint { font-size: 12.5px; color: #8a90a0; text-align: center; margin: 14px 0 10px; line-height: 1.6; }
+.dm-bar { height: 5px; background: #22262f; border-radius: 3px; overflow: hidden; margin-bottom: 26px; }
+.dm-bar .fill { height: 100%; background: #4a9eff; width: 100%; }
+.dm-material { text-align: center; min-height: 160px; display: flex; align-items: center;
+               justify-content: center; flex-wrap: wrap; gap: 14px; padding: 10px 0; }
+.dm-material .ch { font-size: 46px; font-weight: 600; letter-spacing: 2px; }
+.dm-material .txt { font-size: 20px; line-height: 1.95; text-align: left; letter-spacing: .5px; }
+#dm-seq-input { width: 100%; box-sizing: border-box; background: #1b1f28; color: #eaeef5;
+                border: 1px solid #333a48; border-radius: 10px; padding: 14px;
+                font-size: 24px; letter-spacing: 4px; text-align: center; }
+#dm-text-input { width: 100%; box-sizing: border-box; background: #1b1f28; color: #eaeef5;
+                 border: 1px solid #333a48; border-radius: 10px; padding: 12px;
+                 font-size: 16px; line-height: 1.8; resize: vertical; }
+.dm-typed { text-align: center; font-size: 13px; color: #8a90a0; margin-top: 8px; min-height: 18px; }
+.dm-submit { width: 100%; background: #2f6fd0; color: #fff; border: none; border-radius: 11px;
+             padding: 14px; font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 14px; }
+.dm-skip { width: 100%; background: transparent; color: #8a90a0; border: none;
+           padding: 12px; font-size: 13px; cursor: pointer; }
+.dm-cmp { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 12px 0; }
+.dm-slot { min-width: 46px; padding: 9px 6px; border-radius: 9px; text-align: center;
+           font-size: 22px; font-weight: 600; }
+.dm-slot.ok { background: #22321f; color: #8ee6a8; }
+.dm-slot.bad { background: #3a2222; color: #f0a0a0; }
+.dm-slot .sub { display: block; font-size: 11px; font-weight: 400; color: #8a90a0; margin-top: 3px; }
+.dm-scores { display: flex; gap: 8px; margin: 12px 0; }
+.dm-orig { background: #1b1f28; border-radius: 10px; padding: 12px; font-size: 15px;
+           line-height: 1.9; margin: 10px 0; }
+.dm-orig mark { background: rgba(74,158,255,.22); color: inherit; border-radius: 3px; padding: 0 2px; }
+.dm-yours { background: #1b1f28; border-radius: 10px; padding: 12px; font-size: 14px;
+            line-height: 1.8; color: #b8bec9; margin: 10px 0; }
+.dm-gist-btns { display: flex; gap: 8px; }
+.dm-gist-btns button { flex: 1; background: #2f3545; color: #dfe3ea; border: none;
+                       border-radius: 9px; padding: 12px 6px; font-size: 13px; cursor: pointer; }
+.dm-gist-btns button.on { background: #2f6fd0; color: #fff; }
+.dm-sum-btns { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; }
+.dm-sum-btns button { background: #2f3545; color: #dfe3ea; border: none; border-radius: 10px;
+                      padding: 13px; font-size: 14px; cursor: pointer; }
+.dm-sum-btns button.primary { background: #2f6fd0; color: #fff; font-weight: 600; }
+.dm-curve { margin: 12px 0; }
+.dm-curve-row { display: flex; align-items: center; gap: 9px; margin-bottom: 6px; font-size: 12.5px; }
+.dm-curve-row .lab { width: 46px; color: #8a90a0; }
+.dm-curve-row .track { flex: 1; height: 15px; background: #1b1f28; border-radius: 4px; overflow: hidden; display: block; }
+.dm-curve-row .fill { display: block; height: 100%; background: #4a9eff; }
+.dm-curve-row .val { width: 42px; text-align: right; }
+.dm-cap { font-size: 30px; font-weight: 700; }
+.dm-entry { margin: 0 10px 10px; background: #232733; border-radius: 14px; padding: 14px; cursor: pointer; }
+.dm-entry .t { font-size: 15px; font-weight: 600; }
+.dm-entry .d { font-size: 12px; color: #8a90a0; margin-top: 4px; line-height: 1.6; }
+
+/* 新屏幕的头部要和原有训练屏一样留出左右边距 */
+.mt-page .training-header { padding-left: 20px; padding-right: 20px; box-sizing: border-box; }
 
 </style>
 </head>
@@ -2329,6 +2383,50 @@ if(!getDeckInfo(currentDeckId)) currentDeckId='numbers';
 renderTabs();
 showHome();
 </script>
+<div class="mt-page" id="screen-direct" style="display:none">
+  <div class="training-header">
+    <button class="back-btn" onclick="DM.quit()">← 返回</button>
+    <div class="progress" id="dm-progress">1 / 10</div>
+    <div class="timer" id="dm-phase">呈现</div>
+  </div>
+
+  <div id="dm-expose" class="dm-panel" style="display:none">
+    <div class="dm-hint" id="dm-expose-hint">看一遍就好，不要刻意编码</div>
+    <div class="dm-bar"><div class="fill" id="dm-bar-fill"></div></div>
+    <div class="dm-material" id="dm-material"></div>
+  </div>
+
+  <div id="dm-recall" class="dm-panel" style="display:none">
+    <div class="dm-hint" id="dm-recall-hint">按顺序写出刚才看到的内容</div>
+    <div id="dm-seq-input-wrap">
+      <input type="text" id="dm-seq-input" autocomplete="off" autocorrect="off"
+             spellcheck="false" placeholder="按顺序输入，可以不加空格">
+      <div class="dm-typed" id="dm-typed"></div>
+    </div>
+    <textarea id="dm-text-input" rows="5" placeholder="尽量还原原文；记不住原话就写你记得的意思"></textarea>
+    <button class="dm-submit" onclick="DM.submit()">提交 (Enter)</button>
+    <button class="dm-skip" onclick="DM.submit(true)">完全想不起来</button>
+  </div>
+
+  <div id="dm-feedback" class="dm-panel" style="display:none">
+    <div id="dm-fb-body"></div>
+    <div id="dm-gist" style="display:none">
+      <div class="dm-hint">大意说清了吗？（这一项只能你自己判断）</div>
+      <div class="dm-gist-btns">
+        <button onclick="DM.setGist(1)">完全说清</button>
+        <button onclick="DM.setGist(0.5)">说了个大概</button>
+        <button onclick="DM.setGist(0)">没说清</button>
+      </div>
+    </div>
+    <button class="dm-submit" id="dm-next-btn" onclick="DM.next()">继续 (空格)</button>
+  </div>
+
+  <div id="dm-summary" class="dm-panel" style="display:none">
+    <div id="dm-sum-body"></div>
+    <div class="dm-sum-btns" id="dm-sum-btns"></div>
+  </div>
+</div>
+
 <div class="mt-page" id="screen-mt-dash" style="display:none">
   <div class="training-header">
     <button class="back-btn" onclick="showHome()">← 返回</button>
@@ -2523,6 +2621,184 @@ MT2.importData = function (file, mode) {
     location.reload();
   };
   reader.readAsText(file);
+};
+
+/* ==== 25-materials.js ==== */
+// ============================================================
+// 材料库 —— System A / B 需要「永远是新材料」，用 usedLedger 保证不重复
+// ============================================================
+MT2.MAT = {};
+
+// 常用独体/高频字，尽量避免相邻成词。随机序列与标准化基线都从这里取。
+MT2.MAT.CHARS = (
+  '海钟纸月桥火山石田刀弓马牛羊鱼鸟虫木林森水冰雪风云雷电光影' +
+  '门窗床桌椅碗杯瓶盆锅刀叉勺针线布衣帽鞋袜伞扇镜梳刷' +
+  '手足耳目口鼻舌牙心肝肺胃骨血皮毛发指腰背肩肘膝' +
+  '天地日星辰春夏秋冬东南西北中前后左右上下内外' +
+  '金银铜铁锡玉珠宝钱票纸卡书笔墨砚印章旗鼓琴棋' +
+  '米面油盐糖醋茶酒奶蛋肉菜果瓜豆麦稻粟薯蒜姜葱' +
+  '车船飞舟桥路街巷村镇城池塔亭台楼阁寺庙宫殿园' +
+  '走跑跳飞游爬滚落升沉浮沈推拉扛抱抬扔接握捏敲' +
+  '红黄蓝绿白黑紫青灰棕粉橙银金深浅明暗浓淡艳素' +
+  '声音响静吵闹哭笑喊叫唱吹打拍摇晃颤抖震荡鸣哨' +
+  '刀枪剑戟盾甲盔袍带钩环链锁钥梯绳网笼箱柜架板' +
+  '龙虎狮象狼熊鹿兔猫狗猪鸡鸭鹅鸽雀鹰蛇蛙蝶蜂蚁'
+).split('');
+
+// 有意义材料：keys 是关键词，用来自动打「关键词」和「顺序」两项分
+// tier 1 短句 / 2 长句 / 3 两句 / 4 短段
+MT2.MAT.TEXTS = [
+  { tier: 1, text: '门口那棵老槐树昨夜被风吹断了。', keys: ['门口', '老槐树', '昨夜', '风', '吹断'] },
+  { tier: 1, text: '他把钥匙落在了三楼的会议室里。', keys: ['钥匙', '三楼', '会议室'] },
+  { tier: 1, text: '第二班渡轮六点半从北岸出发。', keys: ['第二班', '渡轮', '六点半', '北岸'] },
+  { tier: 1, text: '厨房抽屉里有一把红柄的螺丝刀。', keys: ['厨房', '抽屉', '红柄', '螺丝刀'] },
+  { tier: 1, text: '她在信封背面写了一串陌生的号码。', keys: ['信封', '背面', '一串', '陌生', '号码'] },
+  { tier: 1, text: '仓库最里侧堆着四箱没拆封的瓷砖。', keys: ['仓库', '最里侧', '四箱', '没拆封', '瓷砖'] },
+  { tier: 1, text: '午后的雨把整条石板路洗得发亮。', keys: ['午后', '雨', '石板路', '发亮'] },
+  { tier: 1, text: '老板要求周五之前交出三份报价。', keys: ['老板', '周五', '三份', '报价'] },
+  { tier: 1, text: '窗台上那盆花已经三周没有浇水。', keys: ['窗台', '花', '三周', '没有浇水'] },
+  { tier: 1, text: '他记错了车次，站在了反方向的月台。', keys: ['记错', '车次', '反方向', '月台'] },
+
+  { tier: 2, text: '会议推迟到下周二上午十点，地点从二楼小厅改到了四楼的东侧会议室。', keys: ['推迟', '下周二', '上午十点', '二楼小厅', '四楼', '东侧会议室'] },
+  { tier: 2, text: '医生叮嘱他这瓶药每天两次，饭后服用，连续吃满十四天不要中断。', keys: ['医生', '每天两次', '饭后', '十四天', '不要中断'] },
+  { tier: 2, text: '那家书店搬到了巷子深处，门面比原来小了一半，但二楼多出一个阅览区。', keys: ['书店', '巷子深处', '小了一半', '二楼', '阅览区'] },
+  { tier: 2, text: '快递员说包裹已经放在物业前台，取件时需要报出手机尾号的后四位。', keys: ['快递员', '包裹', '物业前台', '手机尾号', '后四位'] },
+  { tier: 2, text: '这条路在雨季经常积水，所以他们把发电机挪到了离地一米的水泥台上。', keys: ['雨季', '积水', '发电机', '离地一米', '水泥台'] },
+  { tier: 2, text: '她辞掉了城里的工作，回到老家开了一间只在周末营业的小面馆。', keys: ['辞掉', '城里', '老家', '周末', '小面馆'] },
+  { tier: 2, text: '合同里写明，如果三十日内未收到书面异议，条款将自动延续一年。', keys: ['合同', '三十日', '书面异议', '自动延续', '一年'] },
+  { tier: 2, text: '实验做了七次才成功，前六次都是因为温度控制在了错误的区间。', keys: ['七次', '成功', '前六次', '温度控制', '错误区间'] },
+  { tier: 2, text: '他把旧照片按年份分成四摞，最上面那摞的边角已经全部卷了起来。', keys: ['旧照片', '年份', '四摞', '最上面', '边角', '卷'] },
+  { tier: 2, text: '巡逻队每隔两小时经过一次，唯独凌晨三点到五点之间会跳过这一段。', keys: ['巡逻队', '两小时', '凌晨三点', '五点', '跳过'] },
+
+  { tier: 3, text: '仓库的钥匙一共有三把。一把在主管手里，一把挂在门卫室，最后一把不知去向。', keys: ['仓库', '钥匙', '三把', '主管', '门卫室', '不知去向'] },
+  { tier: 3, text: '那年冬天特别冷，河面结的冰厚到可以走人。孩子们在上面滑了整整一个月。', keys: ['那年冬天', '特别冷', '河面', '冰厚', '走人', '一个月'] },
+  { tier: 3, text: '他先去银行取了钱，又绕到药店买了退烧药。回家时发现门是虚掩着的。', keys: ['银行', '取钱', '药店', '退烧药', '门', '虚掩'] },
+  { tier: 3, text: '项目分成三期。第一期修路，第二期建厂房，第三期要等明年的批文下来才能动。', keys: ['三期', '修路', '厂房', '明年', '批文'] },
+  { tier: 3, text: '她说她记得那个电话号码，但只记得开头是零二一。剩下的八位怎么想都想不起来。', keys: ['电话号码', '零二一', '八位', '想不起来'] },
+  { tier: 3, text: '船在第三天遇到了风暴。桅杆断了一根，好在货物都用绳网固定着，一件也没丢。', keys: ['第三天', '风暴', '桅杆', '断了一根', '绳网', '一件没丢'] },
+  { tier: 3, text: '老屋的地基是青石垒的。后来加盖二层时用了红砖，两种材料的接缝至今还看得出来。', keys: ['地基', '青石', '二层', '红砖', '接缝'] },
+  { tier: 3, text: '他把三个月的账目重新核了一遍。差额出在四月的一笔运费上，数字被多写了一个零。', keys: ['三个月', '账目', '差额', '四月', '运费', '多写一个零'] },
+
+  { tier: 4, text: '早班车六点二十从村口发出，途经镇上的集市、中学和医院，终点是县城的老汽车站。整趟车大约要走五十分钟。如果遇上赶集日，在集市那一站可能会多停十分钟。', keys: ['六点二十', '村口', '集市', '中学', '医院', '老汽车站', '五十分钟', '赶集日', '多停十分钟'] },
+  { tier: 4, text: '这台机器有四个警示灯。绿灯代表正常，黄灯代表需要检修，红灯必须立刻停机。第四个是蓝灯，只有在固件升级的时候才会亮，平时看到蓝灯说明有人动过设置。', keys: ['四个警示灯', '绿灯正常', '黄灯检修', '红灯停机', '蓝灯', '固件升级', '有人动过设置'] },
+  { tier: 4, text: '他祖父留下三样东西：一只走时不准的怀表、一本封面脱落的账册，还有半张地契。怀表后来修好了，账册被虫蛀掉了大半，地契一直锁在铁盒里，谁也没打开看过。', keys: ['祖父', '三样东西', '怀表', '账册', '半张地契', '修好', '虫蛀', '铁盒'] },
+  { tier: 4, text: '搬家那天下了雨。搬运工先把书搬上车，因为纸怕淋湿；家具最后装，用防水布盖着。到新住处已经是傍晚，电还没通，一屋子箱子只能靠手机的光一件件拆。', keys: ['搬家', '下雨', '书先搬', '纸怕淋湿', '家具最后', '防水布', '傍晚', '电没通', '手机的光'] },
+  { tier: 4, text: '这份合同的关键在第七条。它规定任何一方要终止合作，必须提前九十天以挂号信的方式通知对方。口头通知和电子邮件都不算数。违反这一条的一方需要赔偿三个月的服务费。', keys: ['第七条', '终止合作', '提前九十天', '挂号信', '口头和邮件不算', '赔偿三个月服务费'] },
+  { tier: 4, text: '他每天的路线几乎不变：七点出门，先在街角买一份报纸，然后步行穿过公园，在东门口的长椅上坐十分钟，八点整走进办公楼。只有下雨天他会改坐两站公交。', keys: ['七点出门', '街角', '报纸', '穿过公园', '东门口长椅', '十分钟', '八点整', '下雨改坐公交', '两站'] }
+];
+
+// ------------------------------------------------------------
+// 取材料：优先没用过的；全部用过后重新开放，但避开最近 N 次用过的
+// ------------------------------------------------------------
+MT2.MAT.pickText = function (tier) {
+  var pool = MT2.MAT.TEXTS.filter(function (t) { return t.tier === tier; });
+  if (!pool.length) pool = MT2.MAT.TEXTS.slice();
+  var fresh = pool.filter(function (t) { return !MT2.db.used['txt:' + t.text]; });
+  var use = fresh.length ? fresh : pool.slice().sort(function (a, b) {
+    return (MT2.db.used['txt:' + a.text] || 0) - (MT2.db.used['txt:' + b.text] || 0);
+  }).slice(0, Math.max(1, Math.ceil(pool.length / 2)));
+  var item = use[Math.floor(Math.random() * use.length)];
+  MT2.db.used['txt:' + item.text] = Date.now();
+  return item;
+};
+
+MT2.MAT.freshTextCount = function (tier) {
+  return MT2.MAT.TEXTS.filter(function (t) {
+    return t.tier === tier && !MT2.db.used['txt:' + t.text];
+  }).length;
+};
+
+// 随机字符序列：同一序列内不重复
+MT2.MAT.pickChars = function (n) {
+  var pool = MT2.MAT.CHARS, out = [], seen = {};
+  var guard = 0;
+  while (out.length < n && guard++ < 2000) {
+    var c = pool[Math.floor(Math.random() * pool.length)];
+    if (seen[c]) continue;
+    seen[c] = 1; out.push(c);
+  }
+  return out;
+};
+
+MT2.MAT.pickDigits = function (n) {
+  var out = [];
+  for (var i = 0; i < n; i++) out.push(String(Math.floor(Math.random() * 10)));
+  return out;
+};
+
+// ------------------------------------------------------------
+// 评分
+// ------------------------------------------------------------
+// 序列：位置正确 与 项目正确（不管顺序）分开算 —— 项目记忆和顺序记忆是两回事
+MT2.MAT.scoreSeq = function (target, answer) {
+  var n = target.length;
+  var pos = 0;
+  for (var i = 0; i < n; i++) if (answer[i] === target[i]) pos++;
+  var pool = target.slice(), items = 0;
+  answer.forEach(function (a) {
+    var i = pool.indexOf(a);
+    if (i !== -1) { pool.splice(i, 1); items++; }
+  });
+  return {
+    n: n,
+    positions: pos, positionAcc: n ? pos / n : 0,
+    items: items, itemAcc: n ? Math.min(items, n) / n : 0,
+    perfect: pos === n && answer.length === n
+  };
+};
+
+function mtLevenshtein(a, b) {
+  var m = a.length, n = b.length;
+  if (!m) return n;
+  if (!n) return m;
+  var prev = [], cur = [], i, j;
+  for (j = 0; j <= n; j++) prev[j] = j;
+  for (i = 1; i <= m; i++) {
+    cur[0] = i;
+    for (j = 1; j <= n; j++) {
+      cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    }
+    for (j = 0; j <= n; j++) prev[j] = cur[j];
+  }
+  return prev[n];
+}
+MT2.MAT.levenshtein = mtLevenshtein;
+
+// 最长递增子序列长度 —— 用来判断关键词有没有按原顺序出现
+function mtLisLen(arr) {
+  var tails = [];
+  arr.forEach(function (v) {
+    var lo = 0, hi = tails.length;
+    while (lo < hi) { var mid = (lo + hi) >> 1; if (tails[mid] < v) lo = mid + 1; else hi = mid; }
+    tails[lo] = v;
+  });
+  return tails.length;
+}
+
+// 有意义材料：逐字 / 关键词 / 顺序 自动算，大意由用户自评
+MT2.MAT.scoreText = function (target, answer, keys) {
+  var norm = function (s) { return (s || '').replace(/[\s，。、；：？！,.;:?!"'「」（）()]/g, ''); };
+  var t = norm(target), a = norm(answer);
+  var dist = mtLevenshtein(t, a);
+  var verbatim = t.length ? Math.max(0, 1 - dist / t.length) : 0;
+
+  var found = [], hit = 0;
+  (keys || []).forEach(function (k, idx) {
+    var kk = norm(k);
+    var at = a.indexOf(kk);
+    if (kk && at !== -1) { hit++; found.push({ order: idx, at: at }); }
+  });
+  var keyword = (keys && keys.length) ? hit / keys.length : null;
+
+  var order = null;
+  if (found.length >= 2) {
+    found.sort(function (x, y) { return x.at - y.at; });
+    order = mtLisLen(found.map(function (f) { return f.order; })) / found.length;
+  } else if (found.length === 1) {
+    order = 1;
+  }
+  return { verbatim: verbatim, keyword: keyword, order: order, keysHit: hit,
+           keysTotal: (keys || []).length, editDistance: dist };
 };
 
 /* ==== 30-retrieval.js ==== */
@@ -2763,6 +3039,512 @@ MT2.calibrationCheck = function (deckId, codes, dir) {
   return { enough: true, cN: cN, sN: sN, selfAcc: sOk / sN, calibAcc: cOk / cN,
            gap: (sOk / sN) - (cOk / cN) };
 };
+
+/* ==== 35-direct.js ==== */
+// ============================================================
+// SYSTEM A — 直接记忆
+// 呈现一次 → 隐藏 → 自主回忆。不刻意编码。
+// 注意：随机序列的容量训练迁移有限（练随机汉字串主要提升随机汉字串本身）。
+// 用户 2026-09-08 决定保留它作为日常训练科目；有意义材料与听觉才是主要杠杆。
+// ============================================================
+var DM = {
+  active: false, kind: '', plan: [], idx: 0, trial: null,
+  results: [], exposeTimer: null, exposeRAF: null, onDone: null, aborted: false
+};
+
+MT2.DM_DEFAULTS = {
+  minLen: 3, maxLen: 12,
+  randomExposureMs: 3000,      // 日常训练的曝光时长
+  msPerChar: 300,              // 有意义材料按字数折算曝光
+  blockSize: 5,                // 每 5 试次调一次难度
+  upAt: 0.90, downAt: 0.60,
+  baselineExposureMs: 3000,    // 基线条件锁死，不可调
+  baselineLens: [3, 4, 5, 6, 7],
+  baselineReps: 5,
+  capacityThreshold: 0.775     // 维持 ~75–80% 正确率的最大长度
+};
+MT2.dmCfg = function (k) {
+  var v = (MT2.db.settings.dm || {})[k];
+  return v === undefined ? MT2.DM_DEFAULTS[k] : v;
+};
+
+MT2.dmAdaptive = function () {
+  var a = MT2.db.direct.adaptive;
+  if (!a.random) a.random = { len: 4, block: [] };
+  if (!a.meaningful) a.meaningful = { tier: 1, block: [] };
+  return a;
+};
+
+function dmEl(id) { return document.getElementById(id); }
+function dmPanel(name) {
+  ['dm-expose', 'dm-recall', 'dm-feedback', 'dm-summary'].forEach(function (p) {
+    dmEl(p).style.display = (p === 'dm-' + name ? 'block' : 'none');
+  });
+}
+
+// ------------------------------------------------------------
+// 计划构建
+// ------------------------------------------------------------
+DM.SECS = { random: 22, meaningful: 62 };
+
+MT2.buildDirectPlan = function (seconds) {
+  var a = MT2.dmAdaptive(), plan = [], used = 0;
+  // 时间按 6:4 分给随机序列和有意义材料，交错排
+  var wantMeaning = Math.max(1, Math.round(seconds * 0.4 / DM.SECS.meaningful));
+  var wantRandom = Math.max(2, Math.round(seconds * 0.6 / DM.SECS.random));
+  var r = 0, m = 0;
+  while (used < seconds && (r < wantRandom || m < wantMeaning)) {
+    if (r < wantRandom) { plan.push({ kind: 'random' }); used += DM.SECS.random; r++; }
+    if (m < wantMeaning && used < seconds) { plan.push({ kind: 'meaningful' }); used += DM.SECS.meaningful; m++; }
+  }
+  return plan;
+};
+
+MT2.buildBaselinePlan = function () {
+  var plan = [];
+  MT2.dmCfg('baselineLens').forEach(function (len) {
+    for (var i = 0; i < MT2.dmCfg('baselineReps'); i++) {
+      plan.push({ kind: 'random', len: len, exposureMs: MT2.dmCfg('baselineExposureMs'), baseline: true });
+    }
+  });
+  return shuffle(plan);
+};
+
+// ------------------------------------------------------------
+// 启动
+// ------------------------------------------------------------
+DM.start = function (kind, plan, onDone) {
+  DM.active = true; DM.kind = kind; DM.plan = plan; DM.idx = 0;
+  DM.results = []; DM.aborted = false; DM.onDone = onDone || null;
+  showScreen('direct');
+  DM.runTrial();
+};
+
+MT2.startDirectTraining = function (minutes) {
+  var plan = MT2.buildDirectPlan((minutes || 5) * 60);
+  DM.start('training', plan, null);
+};
+
+MT2.startBaseline = function () {
+  var n = MT2.dmCfg('baselineLens').length * MT2.dmCfg('baselineReps');
+  if (!confirm('标准化基线测试：' + n + ' 个试次，曝光固定 ' +
+      (MT2.dmCfg('baselineExposureMs') / 1000).toFixed(1) + ' 秒，长度 ' +
+      MT2.dmCfg('baselineLens').join('/') + ' 各 ' + MT2.dmCfg('baselineReps') + ' 次。\n\n' +
+      '条件锁死不可调，中途退出会作废。大约需要 6–8 分钟。\n\n开始？')) return;
+  DM.start('baseline', MT2.buildBaselinePlan(), null);
+};
+
+// ------------------------------------------------------------
+// 单个试次
+// ------------------------------------------------------------
+DM.runTrial = function () {
+  if (DM.idx >= DM.plan.length) { DM.finish(); return; }
+  var spec = DM.plan[DM.idx];
+  var a = MT2.dmAdaptive();
+  var t;
+  if (spec.kind === 'random') {
+    var len = spec.len || a.random.len;
+    t = {
+      kind: 'random', len: len,
+      exposureMs: spec.exposureMs || MT2.dmCfg('randomExposureMs'),
+      target: MT2.MAT.pickChars(len),
+      baseline: !!spec.baseline
+    };
+  } else {
+    var item = MT2.MAT.pickText(spec.tier || a.meaningful.tier);
+    t = {
+      kind: 'meaningful', tier: item.tier, text: item.text, keys: item.keys,
+      exposureMs: Math.round(item.text.length * MT2.dmCfg('msPerChar'))
+    };
+  }
+  DM.trial = t;
+  dmEl('dm-progress').textContent = (DM.idx + 1) + ' / ' + DM.plan.length;
+  DM.expose();
+};
+
+DM.expose = function () {
+  var t = DM.trial;
+  dmPanel('expose');
+  dmEl('dm-phase').textContent = '呈现';
+  dmEl('dm-expose-hint').textContent = DM.kind === 'baseline'
+    ? '基线测试：只看，不要刻意编码'
+    : (t.kind === 'random' ? '看一遍就好，不要刻意编码' : '读一遍，不要刻意编码');
+  var mat = dmEl('dm-material');
+  if (t.kind === 'random') {
+    mat.innerHTML = t.target.map(function (c) { return '<span class="ch">' + c + '</span>'; }).join('');
+  } else {
+    mat.innerHTML = '<div class="txt">' + t.text + '</div>';
+  }
+  var fill = dmEl('dm-bar-fill');
+  fill.style.width = '100%';
+  var st = performance.now(), dur = t.exposureMs;
+  cancelAnimationFrame(DM.exposeRAF);
+  (function tick() {
+    var p = Math.max(0, 1 - (performance.now() - st) / dur);
+    fill.style.width = (p * 100) + '%';
+    if (p > 0 && DM.active) DM.exposeRAF = requestAnimationFrame(tick);
+  })();
+  clearTimeout(DM.exposeTimer);
+  DM.exposeTimer = setTimeout(function () {
+    if (!DM.active) return;
+    mat.innerHTML = '';
+    DM.recall();
+  }, dur);
+};
+
+DM.recall = function () {
+  var t = DM.trial;
+  dmPanel('recall');
+  dmEl('dm-phase').textContent = '回忆';
+  t.recallStart = performance.now();
+  var seqWrap = dmEl('dm-seq-input-wrap'), txt = dmEl('dm-text-input');
+  if (t.kind === 'random') {
+    seqWrap.style.display = ''; txt.style.display = 'none';
+    dmEl('dm-recall-hint').textContent = '按顺序写出刚才那 ' + t.len + ' 个字';
+    var inp = dmEl('dm-seq-input');
+    inp.value = ''; dmEl('dm-typed').textContent = '';
+    setTimeout(function () { try { inp.focus(); } catch (e) {} }, 60);
+  } else {
+    seqWrap.style.display = 'none'; txt.style.display = '';
+    dmEl('dm-recall-hint').textContent = '尽量还原原文。想不起原话就写你记得的内容。';
+    txt.value = '';
+    setTimeout(function () { try { txt.focus(); } catch (e) {} }, 60);
+  }
+};
+
+DM.parseSeq = function (s) {
+  return (s || '').replace(/[\s,，、。;；]/g, '').split('');
+};
+
+DM.submit = function (blank) {
+  if (!DM.active || !DM.trial || DM.trial.scored) return;
+  var t = DM.trial;
+  t.recallMs = t.recallStart ? performance.now() - t.recallStart : null;
+  if (t.kind === 'random') {
+    t.answer = blank ? [] : DM.parseSeq(dmEl('dm-seq-input').value);
+    t.score = MT2.MAT.scoreSeq(t.target, t.answer);
+  } else {
+    t.answer = blank ? '' : dmEl('dm-text-input').value;
+    t.score = MT2.MAT.scoreText(t.text, t.answer, t.keys);
+    t.gist = null;
+  }
+  t.scored = true;
+  DM.feedback();
+};
+
+DM.feedback = function () {
+  var t = DM.trial;
+  dmPanel('feedback');
+  dmEl('dm-phase').textContent = '核对';
+  var h = '';
+  if (t.kind === 'random') {
+    h += '<div class="dm-cmp">';
+    for (var i = 0; i < t.len; i++) {
+      var got = t.answer[i], want = t.target[i];
+      var good = got === want;
+      h += '<div class="dm-slot ' + (good ? 'ok' : 'bad') + '">' + want +
+           '<span class="sub">' + (good ? '✓' : (got ? got : '—')) + '</span></div>';
+    }
+    h += '</div>';
+    if (t.answer.length > t.len) {
+      h += '<div class="mt-note" style="text-align:center">多写了 ' + (t.answer.length - t.len) + ' 个字</div>';
+    }
+    h += '<div class="dm-scores">' +
+         kpi('位置正确', t.score.positions + '/' + t.len) +
+         kpi('记住的字', t.score.items + '/' + t.len) +
+         kpi('顺序', t.score.items ? Math.round(t.score.positions / t.score.items * 100) + '%' : '—') +
+         '</div>';
+    if (t.score.items > t.score.positions) {
+      h += '<div class="mt-note">字记住了但位置错了 —— 项目记忆比顺序记忆强，这两件事是分开的。</div>';
+    }
+    dmEl('dm-gist').style.display = 'none';
+  } else {
+    var marked = t.text;
+    t.keys.forEach(function (k) { marked = marked.split(k).join('<mark>' + k + '</mark>'); });
+    h += '<div class="mt-note">原文</div><div class="dm-orig">' + marked + '</div>';
+    h += '<div class="mt-note">你写的</div><div class="dm-yours">' +
+         (t.answer ? t.answer.replace(/</g, '&lt;') : '（空）') + '</div>';
+    h += '<div class="dm-scores">' +
+         kpi('关键词', Math.round((t.score.keyword || 0) * 100) + '%') +
+         kpi('逐字', Math.round(t.score.verbatim * 100) + '%') +
+         kpi('顺序', t.score.order === null ? '—' : Math.round(t.score.order * 100) + '%') +
+         '</div>';
+    dmEl('dm-gist').style.display = '';
+    Array.prototype.forEach.call(dmEl('dm-gist').querySelectorAll('button'), function (b) {
+      b.classList.remove('on');
+    });
+    dmEl('dm-next-btn').disabled = true;
+    dmEl('dm-next-btn').style.opacity = '.45';
+  }
+  dmEl('dm-fb-body').innerHTML = h;
+  if (t.kind === 'random') {
+    dmEl('dm-next-btn').disabled = false;
+    dmEl('dm-next-btn').style.opacity = '';
+  }
+};
+
+DM.setGist = function (v) {
+  if (!DM.trial) return;
+  DM.trial.gist = v;
+  Array.prototype.forEach.call(dmEl('dm-gist').querySelectorAll('button'), function (b, i) {
+    b.classList.toggle('on', [1, 0.5, 0][i] === v);
+  });
+  dmEl('dm-next-btn').disabled = false;
+  dmEl('dm-next-btn').style.opacity = '';
+};
+
+DM.next = function () {
+  var t = DM.trial;
+  if (!t || !t.scored) return;
+  if (t.kind === 'meaningful' && t.gist === null) return;
+  DM.record(t);
+  DM.results.push(t);
+  DM.idx++;
+  DM.trial = null;
+  DM.runTrial();
+};
+
+// ------------------------------------------------------------
+// 记录
+// ------------------------------------------------------------
+DM.record = function (t) {
+  var row = {
+    ts: Date.now(), kind: t.kind, modality: 'visual',
+    exposureMs: t.exposureMs, recallMs: Math.round(t.recallMs || 0),
+    baseline: !!t.baseline, session: DM.kind
+  };
+  if (t.kind === 'random') {
+    row.len = t.len;
+    row.scores = { position: t.score.positionAcc, item: t.score.itemAcc, perfect: t.score.perfect ? 1 : 0 };
+  } else {
+    row.tier = t.tier; row.textRef = t.text.slice(0, 12);
+    row.scores = { keyword: t.score.keyword, verbatim: t.score.verbatim,
+                   order: t.score.order, gist: t.gist };
+    // 延迟保持队列（P4 消费）。不在这里重新呈现原文，否则测的是重学不是保持。
+    [['30s', 30e3], ['5min', 300e3], ['24h', 864e5], ['3d', 2592e5]].forEach(function (d) {
+      MT2.db.queue.push({ itemId: 'txt:' + t.text, source: 'direct', label: d[0],
+                          dueTs: Date.now() + d[1], createdTs: Date.now() });
+    });
+  }
+  MT2.db.direct.trials.push(row);
+  if (MT2.db.direct.trials.length > 3000) {
+    MT2.db.direct.trials = MT2.db.direct.trials.slice(-3000);
+  }
+  if (DM.kind === 'training') DM.adapt(t);
+  MT2.save();
+};
+
+// 块级自适应：每 blockSize 个试次调一次，不因单次运气好坏就动难度
+DM.adapt = function (t) {
+  var a = MT2.dmAdaptive();
+  if (t.kind === 'random') {
+    a.random.block.push(t.score.itemAcc);
+    if (a.random.block.length >= MT2.dmCfg('blockSize')) {
+      var m = a.random.block.reduce(function (x, y) { return x + y; }, 0) / a.random.block.length;
+      if (m > MT2.dmCfg('upAt')) a.random.len = Math.min(MT2.dmCfg('maxLen'), a.random.len + 1);
+      else if (m < MT2.dmCfg('downAt')) a.random.len = Math.max(MT2.dmCfg('minLen'), a.random.len - 1);
+      a.random.block = [];
+      a.random.lastAdjust = { ts: Date.now(), mean: m, newLen: a.random.len };
+    }
+  } else {
+    var s = t.score;
+    var composite = ((s.keyword === null ? 0 : s.keyword) + s.verbatim + (t.gist === null ? 0 : t.gist)) / 3;
+    a.meaningful.block.push(composite);
+    if (a.meaningful.block.length >= MT2.dmCfg('blockSize')) {
+      var mm = a.meaningful.block.reduce(function (x, y) { return x + y; }, 0) / a.meaningful.block.length;
+      if (mm > MT2.dmCfg('upAt')) a.meaningful.tier = Math.min(4, a.meaningful.tier + 1);
+      else if (mm < MT2.dmCfg('downAt')) a.meaningful.tier = Math.max(1, a.meaningful.tier - 1);
+      a.meaningful.block = [];
+    }
+  }
+};
+
+// ------------------------------------------------------------
+// 结束
+// ------------------------------------------------------------
+DM.finish = function () {
+  DM.active = false;
+  clearTimeout(DM.exposeTimer); cancelAnimationFrame(DM.exposeRAF);
+  dmPanel('summary');
+  dmEl('dm-phase').textContent = '完成';
+  var h = '', btns = '';
+  if (DM.kind === 'baseline') {
+    var b = MT2.saveBaseline(DM.results);
+    h += '<div class="mt-card"><div class="mt-card-h">标准化基线</div>' +
+         '<div style="text-align:center;margin:10px 0"><div class="dm-cap">' + b.capacityText + '</div>' +
+         '<div class="mt-note" style="text-align:center">直接记忆容量（维持 ' +
+         Math.round(MT2.dmCfg('capacityThreshold') * 100) + '% 正确率的最大长度）</div></div>' +
+         MT2.renderCurve(b.byLen) +
+         '<div class="mt-note">曝光固定 ' + (b.exposureMs / 1000).toFixed(1) + 's，' +
+         b.lens.join('/') + ' 各 ' + b.reps + ' 次。下次重跑必须同样条件才能比。</div>';
+    var prev = MT2.db.direct.baselines.slice(-2)[0];
+    if (prev && prev.ts !== b.ts) {
+      h += '<div class="mt-note">上次（' + new Date(prev.ts).toISOString().slice(0, 10) + '）：' +
+           prev.capacityText + (MT2.baselineComparable(prev, b) ? '' : ' —— 条件不同，不可比') + '</div>';
+    }
+    h += '</div>';
+  } else {
+    var rand = DM.results.filter(function (t) { return t.kind === 'random'; });
+    var mean = DM.results.filter(function (t) { return t.kind === 'meaningful'; });
+    h += '<div class="mt-card"><div class="mt-card-h">本轮直接记忆</div>';
+    if (rand.length) {
+      var pos = rand.reduce(function (a, t) { return a + t.score.positionAcc; }, 0) / rand.length;
+      var itm = rand.reduce(function (a, t) { return a + t.score.itemAcc; }, 0) / rand.length;
+      h += '<div class="mt-note">随机序列 ' + rand.length + ' 次</div><div class="mt-kpis">' +
+           kpi('位置正确', Math.round(pos * 100) + '%') +
+           kpi('记住的字', Math.round(itm * 100) + '%') +
+           kpi('当前长度', MT2.dmAdaptive().random.len) + '</div>';
+    }
+    if (mean.length) {
+      var kw = mean.reduce(function (a, t) { return a + (t.score.keyword || 0); }, 0) / mean.length;
+      var vb = mean.reduce(function (a, t) { return a + t.score.verbatim; }, 0) / mean.length;
+      var gs = mean.reduce(function (a, t) { return a + (t.gist || 0); }, 0) / mean.length;
+      h += '<div class="mt-note" style="margin-top:10px">有意义材料 ' + mean.length + ' 次</div><div class="mt-kpis">' +
+           kpi('大意', Math.round(gs * 100) + '%') +
+           kpi('关键词', Math.round(kw * 100) + '%') +
+           kpi('逐字', Math.round(vb * 100) + '%') + '</div>';
+    }
+    h += '<div class="mt-note">随机序列的进步主要停留在随机序列本身，不太会迁移到生词、诗词、歌词。' +
+         '判断整体是否变好，看有意义材料和听觉那两项。</div></div>';
+  }
+  dmEl('dm-sum-body').innerHTML = h;
+  if (DM.onDone) {
+    btns = '<button class="primary" onclick="DM.continueSession()">继续今日训练 →</button>';
+  } else {
+    btns = '<button class="primary" onclick="showHome()">返回首页</button>';
+    if (DM.kind === 'training') {
+      btns = '<button class="primary" onclick="MT2.startDirectTraining(5)">再来 5 分钟</button>' + btns;
+    }
+  }
+  dmEl('dm-sum-btns').innerHTML = btns;
+};
+
+DM.continueSession = function () {
+  var cb = DM.onDone; DM.onDone = null;
+  if (cb) cb();
+};
+
+DM.quit = function () {
+  if (DM.active && DM.idx > 0 && DM.kind === 'baseline') {
+    if (!confirm('基线测试中途退出会作废本次结果。确定退出？')) return;
+    DM.aborted = true;
+  }
+  DM.active = false;
+  clearTimeout(DM.exposeTimer); cancelAnimationFrame(DM.exposeRAF);
+  var cb = DM.onDone; DM.onDone = null;
+  if (cb) { cb(); return; }
+  showHome();
+};
+
+// ------------------------------------------------------------
+// 基线：容量估计
+// ------------------------------------------------------------
+MT2.computeCapacity = function (byLen) {
+  var thr = MT2.dmCfg('capacityThreshold');
+  var lens = Object.keys(byLen).map(Number).sort(function (a, b) { return a - b; });
+  if (!lens.length) return { value: null, text: '—' };
+  var first = lens[0];
+  if (byLen[first] < thr) return { value: null, text: '< ' + first, below: true };
+  for (var i = 1; i < lens.length; i++) {
+    var lo = lens[i - 1], hi = lens[i];
+    if (byLen[hi] < thr) {
+      var span = byLen[lo] - byLen[hi];
+      var frac = span > 0 ? (byLen[lo] - thr) / span : 0;
+      var v = lo + frac * (hi - lo);
+      return { value: v, text: v.toFixed(1) };
+    }
+  }
+  var top = lens[lens.length - 1];
+  return { value: top, text: '≥ ' + top, ceiling: true };
+};
+
+MT2.saveBaseline = function (results) {
+  var byLen = {}, counts = {};
+  results.forEach(function (t) {
+    byLen[t.len] = (byLen[t.len] || 0) + t.score.itemAcc;
+    counts[t.len] = (counts[t.len] || 0) + 1;
+  });
+  Object.keys(byLen).forEach(function (L) { byLen[L] = byLen[L] / counts[L]; });
+  var cap = MT2.computeCapacity(byLen);
+  var b = {
+    ts: Date.now(), byLen: byLen, counts: counts,
+    capacity: cap.value, capacityText: cap.text,
+    exposureMs: MT2.dmCfg('baselineExposureMs'),
+    lens: MT2.dmCfg('baselineLens').slice(),
+    reps: MT2.dmCfg('baselineReps'),
+    threshold: MT2.dmCfg('capacityThreshold'),
+    modality: 'visual', material: 'chars'
+  };
+  MT2.db.direct.baselines.push(b);
+  MT2.save();
+  return b;
+};
+
+// 条件不同的基线不可比 —— 曝光时长或长度集合变了，数字就没有意义
+MT2.baselineComparable = function (a, b) {
+  return a.exposureMs === b.exposureMs &&
+         a.reps === b.reps &&
+         a.material === b.material &&
+         a.modality === b.modality &&
+         a.lens.join(',') === b.lens.join(',');
+};
+
+MT2.renderCurve = function (byLen) {
+  var lens = Object.keys(byLen).map(Number).sort(function (a, b) { return a - b; });
+  var thr = MT2.dmCfg('capacityThreshold');
+  return '<div class="dm-curve">' + lens.map(function (L) {
+    var v = byLen[L];
+    return '<div class="dm-curve-row"><span class="lab">' + L + ' 项</span>' +
+           '<span class="track"><span class="fill" style="width:' + (v * 100) + '%;background:' +
+           (v >= thr ? '#3ddc84' : '#f0883e') + '"></span></span>' +
+           '<span class="val">' + Math.round(v * 100) + '%</span></div>';
+  }).join('') + '</div>';
+};
+
+// ------------------------------------------------------------
+// 聚合（仪表盘用）
+// ------------------------------------------------------------
+MT2.directSummary = function (days) {
+  var cutoff = Date.now() - (days || 100000) * 86400000;
+  var tr = MT2.db.direct.trials.filter(function (t) { return t.ts >= cutoff; });
+  var rand = tr.filter(function (t) { return t.kind === 'random' && !t.baseline; });
+  var mean = tr.filter(function (t) { return t.kind === 'meaningful'; });
+  function avg(a, f) { return a.length ? a.reduce(function (x, t) { return x + (f(t) || 0); }, 0) / a.length : null; }
+  var byLen = {};
+  rand.forEach(function (t) {
+    if (!byLen[t.len]) byLen[t.len] = [];
+    byLen[t.len].push(t.scores.item);
+  });
+  Object.keys(byLen).forEach(function (L) {
+    byLen[L] = byLen[L].reduce(function (a, b) { return a + b; }, 0) / byLen[L].length;
+  });
+  var last = MT2.db.direct.baselines.slice(-1)[0] || null;
+  return {
+    trials: tr.length, randomN: rand.length, meaningfulN: mean.length,
+    positionAcc: avg(rand, function (t) { return t.scores.position; }),
+    itemAcc: avg(rand, function (t) { return t.scores.item; }),
+    byLen: byLen,
+    currentLen: MT2.dmAdaptive().random.len,
+    currentTier: MT2.dmAdaptive().meaningful.tier,
+    gist: avg(mean, function (t) { return t.scores.gist; }),
+    keyword: avg(mean, function (t) { return t.scores.keyword; }),
+    verbatim: avg(mean, function (t) { return t.scores.verbatim; }),
+    order: avg(mean, function (t) { return t.scores.order; }),
+    baseline: last
+  };
+};
+
+// 键盘：Enter 提交，空格继续
+document.addEventListener('keydown', function (e) {
+  if (!DM.active) return;
+  if (document.getElementById('screen-direct').style.display === 'none') return;
+  if (dmEl('dm-recall').style.display !== 'none' && e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault(); DM.submit();
+  } else if (dmEl('dm-feedback').style.display !== 'none' && e.code === 'Space') {
+    if (document.activeElement && /INPUT|TEXTAREA/.test(document.activeElement.tagName)) return;
+    e.preventDefault(); DM.next();
+  }
+}, true);
 
 /* ==== 40-flow.js ==== */
 // ============================================================
@@ -3201,16 +3983,45 @@ MT2.buildTodayDeck = function (deckId, codes, budgetItems) {
   return shuffle(picked.slice(0, budgetItems));
 };
 
+// 一次「今日训练」由若干段组成。直接记忆在前（新材料需要清醒的注意力），
+// 提取自动化在后。System B 接入后插在两者之间。
+MT2.session = { segs: [], i: -1, preset: '15m' };
+
+MT2.buildSegments = function (preset) {
+  var p = MT2.SESSION_PRESETS[preset] || MT2.SESSION_PRESETS['15m'];
+  var segs = [];
+  // 5 分钟速练不放直接记忆：一个有意义材料试次就要一分钟，塞不下
+  if (p.minutes >= 15) segs.push({ type: 'direct', minutes: 5 });
+  segs.push({ type: 'retrieval', minutes: p.minutes - (segs.length ? 5 : 0) });
+  return segs;
+};
+
 MT2.startToday = function (preset) {
   preset = preset || MT2.cfg('sessionLen');
-  var p = MT2.SESSION_PRESETS[preset] || MT2.SESSION_PRESETS['15m'];
   MT2.setCfg('sessionLen', preset);
   var codes = getFilteredCodes();
   if (!codes.length) { alert('当前范围内没有编码'); return; }
+  MT2.session = { segs: MT2.buildSegments(preset), i: -1, preset: preset };
+  MT2.runNextSegment();
+};
+
+MT2.runNextSegment = function () {
+  MT2.session.i++;
+  var seg = MT2.session.segs[MT2.session.i];
+  if (!seg) { MT2.session = { segs: [], i: -1, preset: MT2.session.preset }; showHome(); return; }
+  if (seg.type === 'direct') {
+    DM.start('training', MT2.buildDirectPlan(seg.minutes * 60), MT2.runNextSegment);
+    return;
+  }
+  MT2.startRetrievalSegment(seg.minutes);
+};
+
+MT2.startRetrievalSegment = function (minutes) {
+  var codes = getFilteredCodes();
   var per = MT2.estimateSecsPerItem(currentDeckId, codes);
-  var budget = Math.max(8, Math.round(p.minutes * 60 / per));
+  var budget = Math.max(8, Math.round(minutes * 60 / per));
   var d = MT2.buildTodayDeck(currentDeckId, codes, budget);
-  if (!d.length) { alert('没有可练的内容'); return; }
+  if (!d.length) { alert('没有可练的内容'); showHome(); return; }
   currentMode = 'today'; lastMode = 'today';
   deck = d;
   lastDeck = deck.map(function (c) { return { type: c.type, codes: c.codes.slice() }; });
@@ -3229,8 +4040,12 @@ MT2.todayPlan = function () {
   if (s.wrongItems.length) bits.push('错项 ' + s.wrongItems.length);
   if (s.slowItems.length) bits.push('慢项 ' + s.slowItems.length);
   if (s.dueItems.length) bits.push('到期 ' + s.dueItems.length);
-  var p = MT2.SESSION_PRESETS[MT2.cfg('sessionLen')] || MT2.SESSION_PRESETS['15m'];
-  return p.label + (bits.length ? ' · 优先练 ' + bits.join(' / ') : ' · 全部已掌握，随机抽查');
+  var key = MT2.cfg('sessionLen');
+  var p = MT2.SESSION_PRESETS[key] || MT2.SESSION_PRESETS['15m'];
+  var segs = MT2.buildSegments(key).map(function (g) {
+    return g.type === 'direct' ? '直接记忆 ' + g.minutes + ' 分' : '提取 ' + g.minutes + ' 分';
+  }).join(' + ');
+  return p.label + '：' + segs + (bits.length ? ' · 优先练 ' + bits.join(' / ') : ' · 全部已掌握，随机抽查');
 };
 
 // ------------------------------------------------------------
@@ -3390,11 +4205,52 @@ MT2.renderDashboard = function () {
   }
   h += '</div>';
 
-  // ---- 直接记忆（P3）----
-  h += '<div class="mt-card mt-pending"><div class="mt-card-h">直接记忆 <span class="mt-sub">看一遍/听一遍，能留下多少</span></div>' +
-       '<div class="mt-empty">P3 阶段实现。将包含：视觉容量、听觉容量、即时/5 分钟/24 小时保持、Trials to Acquisition。' +
-       '<br><span class="mt-note">注意：随机序列的容量训练迁移有限——练随机汉字串主要提升的是随机汉字串本身的成绩，' +
-       '不太会迁移到生词、诗词、歌词。这里的数字更适合当诊断指标看，判断瓶颈在编码还是在提取。</span></div></div>';
+  // ---- 直接记忆 ----
+  var dm = MT2.directSummary();
+  h += '<div class="mt-card"><div class="mt-card-h">直接记忆 <span class="mt-sub">看一遍，能留下多少</span></div>';
+  if (!dm.trials) {
+    h += '<div class="mt-empty">还没有数据。首页「直接记忆」练一轮，或先跑一次标准化基线。</div>';
+  } else {
+    var cap = dm.baseline ? dm.baseline.capacityText : '—';
+    h += '<div class="mt-kpis">' +
+      kpi('视觉容量', cap) +
+      kpi('记住的字', fmtP(dm.itemAcc)) +
+      kpi('位置正确', fmtP(dm.positionAcc)) +
+      kpi('当前长度', dm.currentLen) +
+      '</div>';
+    if (dm.meaningfulN) {
+      h += '<div class="mt-note">有意义材料（' + dm.meaningfulN + ' 次，当前难度 T' + dm.currentTier + '）</div>' +
+        '<div class="mt-kpis">' +
+        kpi('大意', fmtP(dm.gist)) +
+        kpi('关键词', fmtP(dm.keyword)) +
+        kpi('逐字', fmtP(dm.verbatim)) +
+        kpi('顺序', fmtP(dm.order)) +
+        '</div>';
+    }
+    if (Object.keys(dm.byLen).length) {
+      h += '<div class="mt-note">日常训练各长度正确率</div>' + MT2.renderCurve(dm.byLen);
+    }
+    if (dm.baseline) {
+      h += '<div class="mt-note">最近一次基线 ' + new Date(dm.baseline.ts).toISOString().slice(0, 10) +
+           '（曝光 ' + (dm.baseline.exposureMs / 1000).toFixed(1) + 's）</div>' +
+           MT2.renderCurve(dm.baseline.byLen);
+      var bl = MT2.db.direct.baselines;
+      if (bl.length >= 2) {
+        var prev = bl[bl.length - 2], cur = bl[bl.length - 1];
+        h += MT2.baselineComparable(prev, cur)
+          ? '<div class="mt-note">上次 ' + prev.capacityText + ' → 这次 ' + cur.capacityText + '</div>'
+          : '<div class="mt-warn">上一次基线的条件和这次不同，两个容量数字不可比。</div>';
+      } else {
+        h += '<div class="mt-note">只有一次基线，还没有对照。建议 7 / 30 / 90 天后同条件重跑。</div>';
+      }
+    } else {
+      h += '<div class="mt-warn">还没跑过标准化基线。日常训练的长度是自适应的，不能当基线用 —— ' +
+           '要看容量有没有变，需要固定条件重跑同一套测试。</div>';
+    }
+    h += '<div class="mt-note">随机序列的进步主要停留在随机序列本身，不太会迁移到生词、诗词、歌词。' +
+         '判断整体记忆是否变好，看有意义材料那几项。</div>';
+  }
+  h += '<button class="mt-btn" onclick="MT2.startBaseline()">跑一次标准化基线</button></div>';
 
   // ---- 编码效率（P5）----
   h += '<div class="mt-card mt-pending"><div class="mt-card-h">编码效率 <span class="mt-sub">需要用方法时，建立稳定记忆有多快</span></div>' +
@@ -3488,7 +4344,7 @@ MT2.showDash = function () { showScreen('mt-dash'); MT2.renderDashboard(); };
 // ============================================================
 // 接线：新屏幕路由 / 首页改版 / 初始化
 // ============================================================
-MT2.SCREENS = ['home','training','summary','browse','stats','seq-memorize','seq-recall','mt-dash','mt-map'];
+MT2.SCREENS = ['home','training','summary','browse','stats','seq-memorize','seq-recall','mt-dash','mt-map','direct'];
 
 showScreen = function (name) {
   currentScreen = name;
@@ -3503,6 +4359,7 @@ var _mtOrigHandleBack = handleBack;
 handleBack = function () {
   var modal = document.querySelector('.modal-overlay.show');
   if (modal) { modal.classList.remove('show'); return true; }
+  if (currentScreen === 'direct') { DM.quit(); return true; }
   if (currentScreen === 'mt-map') { MT2.showDash(); return true; }
   if (currentScreen === 'mt-dash') { showHome(); return true; }
   return _mtOrigHandleBack();
@@ -3546,6 +4403,19 @@ MT2.injectHome = function () {
     };
   });
 
+  // 直接记忆入口
+  var dmWrap = document.createElement('div');
+  dmWrap.id = 'mt-dm-entries';
+  dmWrap.innerHTML =
+    '<div class="mt-fold-h" style="cursor:default">直接记忆（System A）</div>' +
+    '<div class="dm-entry" onclick="MT2.startDirectTraining(5)">' +
+      '<div class="t">🧠 直接记忆训练</div>' +
+      '<div class="d" id="mt-dm-desc">看一遍就回忆，不刻意编码</div></div>' +
+    '<div class="dm-entry" onclick="MT2.startBaseline()">' +
+      '<div class="t">📏 标准化基线测试</div>' +
+      '<div class="d" id="mt-bl-desc">固定条件，7/30/90 天重跑才可比</div></div>';
+  modes.insertBefore(dmWrap, card.nextSibling);
+
   // 原有模式折叠
   var firstTitle = modes.querySelector('.section-title');
   if (firstTitle) {
@@ -3583,6 +4453,21 @@ updateHomeUI = function () {
   var s = MT2.deckSummary(currentDeckId, codes, 'fwd');
   var wc = document.getElementById('home-weak-count');
   if (wc) wc.textContent = s.wrongItems.length + s.slowItems.length;
+  // 直接记忆入口的说明
+  var dmd = document.getElementById('mt-dm-desc');
+  if (dmd) {
+    var a = MT2.dmAdaptive();
+    var ds = MT2.directSummary(30);
+    dmd.textContent = '当前 ' + a.random.len + ' 字序列 · 有意义材料 T' + a.meaningful.tier +
+      (ds.trials ? ' · 近 30 天 ' + ds.trials + ' 次' : ' · 还没练过');
+  }
+  var bld = document.getElementById('mt-bl-desc');
+  if (bld) {
+    var last = MT2.db.direct.baselines.slice(-1)[0];
+    bld.textContent = last
+      ? '上次 ' + new Date(last.ts).toISOString().slice(0, 10) + '：容量 ' + last.capacityText
+      : '还没跑过 —— 没有基线就没有对照起点';
+  }
 };
 
 // 结束页：补充本轮的新口径指标

@@ -97,11 +97,52 @@ MT2.renderDashboard = function () {
   }
   h += '</div>';
 
-  // ---- 直接记忆（P3）----
-  h += '<div class="mt-card mt-pending"><div class="mt-card-h">直接记忆 <span class="mt-sub">看一遍/听一遍，能留下多少</span></div>' +
-       '<div class="mt-empty">P3 阶段实现。将包含：视觉容量、听觉容量、即时/5 分钟/24 小时保持、Trials to Acquisition。' +
-       '<br><span class="mt-note">注意：随机序列的容量训练迁移有限——练随机汉字串主要提升的是随机汉字串本身的成绩，' +
-       '不太会迁移到生词、诗词、歌词。这里的数字更适合当诊断指标看，判断瓶颈在编码还是在提取。</span></div></div>';
+  // ---- 直接记忆 ----
+  var dm = MT2.directSummary();
+  h += '<div class="mt-card"><div class="mt-card-h">直接记忆 <span class="mt-sub">看一遍，能留下多少</span></div>';
+  if (!dm.trials) {
+    h += '<div class="mt-empty">还没有数据。首页「直接记忆」练一轮，或先跑一次标准化基线。</div>';
+  } else {
+    var cap = dm.baseline ? dm.baseline.capacityText : '—';
+    h += '<div class="mt-kpis">' +
+      kpi('视觉容量', cap) +
+      kpi('记住的字', fmtP(dm.itemAcc)) +
+      kpi('位置正确', fmtP(dm.positionAcc)) +
+      kpi('当前长度', dm.currentLen) +
+      '</div>';
+    if (dm.meaningfulN) {
+      h += '<div class="mt-note">有意义材料（' + dm.meaningfulN + ' 次，当前难度 T' + dm.currentTier + '）</div>' +
+        '<div class="mt-kpis">' +
+        kpi('大意', fmtP(dm.gist)) +
+        kpi('关键词', fmtP(dm.keyword)) +
+        kpi('逐字', fmtP(dm.verbatim)) +
+        kpi('顺序', fmtP(dm.order)) +
+        '</div>';
+    }
+    if (Object.keys(dm.byLen).length) {
+      h += '<div class="mt-note">日常训练各长度正确率</div>' + MT2.renderCurve(dm.byLen);
+    }
+    if (dm.baseline) {
+      h += '<div class="mt-note">最近一次基线 ' + new Date(dm.baseline.ts).toISOString().slice(0, 10) +
+           '（曝光 ' + (dm.baseline.exposureMs / 1000).toFixed(1) + 's）</div>' +
+           MT2.renderCurve(dm.baseline.byLen);
+      var bl = MT2.db.direct.baselines;
+      if (bl.length >= 2) {
+        var prev = bl[bl.length - 2], cur = bl[bl.length - 1];
+        h += MT2.baselineComparable(prev, cur)
+          ? '<div class="mt-note">上次 ' + prev.capacityText + ' → 这次 ' + cur.capacityText + '</div>'
+          : '<div class="mt-warn">上一次基线的条件和这次不同，两个容量数字不可比。</div>';
+      } else {
+        h += '<div class="mt-note">只有一次基线，还没有对照。建议 7 / 30 / 90 天后同条件重跑。</div>';
+      }
+    } else {
+      h += '<div class="mt-warn">还没跑过标准化基线。日常训练的长度是自适应的，不能当基线用 —— ' +
+           '要看容量有没有变，需要固定条件重跑同一套测试。</div>';
+    }
+    h += '<div class="mt-note">随机序列的进步主要停留在随机序列本身，不太会迁移到生词、诗词、歌词。' +
+         '判断整体记忆是否变好，看有意义材料那几项。</div>';
+  }
+  h += '<button class="mt-btn" onclick="MT2.startBaseline()">跑一次标准化基线</button></div>';
 
   // ---- 编码效率（P5）----
   h += '<div class="mt-card mt-pending"><div class="mt-card-h">编码效率 <span class="mt-sub">需要用方法时，建立稳定记忆有多快</span></div>' +

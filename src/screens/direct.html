@@ -1,0 +1,43 @@
+<div class="mt-page" id="screen-direct" style="display:none">
+  <div class="training-header">
+    <button class="back-btn" onclick="DM.quit()">← 返回</button>
+    <div class="progress" id="dm-progress">1 / 10</div>
+    <div class="timer" id="dm-phase">呈现</div>
+  </div>
+
+  <div id="dm-expose" class="dm-panel" style="display:none">
+    <div class="dm-hint" id="dm-expose-hint">看一遍就好，不要刻意编码</div>
+    <div class="dm-bar"><div class="fill" id="dm-bar-fill"></div></div>
+    <div class="dm-material" id="dm-material"></div>
+  </div>
+
+  <div id="dm-recall" class="dm-panel" style="display:none">
+    <div class="dm-hint" id="dm-recall-hint">按顺序写出刚才看到的内容</div>
+    <div id="dm-seq-input-wrap">
+      <input type="text" id="dm-seq-input" autocomplete="off" autocorrect="off"
+             spellcheck="false" placeholder="按顺序输入，可以不加空格">
+      <div class="dm-typed" id="dm-typed"></div>
+    </div>
+    <textarea id="dm-text-input" rows="5" placeholder="尽量还原原文；记不住原话就写你记得的意思"></textarea>
+    <button class="dm-submit" onclick="DM.submit()">提交 (Enter)</button>
+    <button class="dm-skip" onclick="DM.submit(true)">完全想不起来</button>
+  </div>
+
+  <div id="dm-feedback" class="dm-panel" style="display:none">
+    <div id="dm-fb-body"></div>
+    <div id="dm-gist" style="display:none">
+      <div class="dm-hint">大意说清了吗？（这一项只能你自己判断）</div>
+      <div class="dm-gist-btns">
+        <button onclick="DM.setGist(1)">完全说清</button>
+        <button onclick="DM.setGist(0.5)">说了个大概</button>
+        <button onclick="DM.setGist(0)">没说清</button>
+      </div>
+    </div>
+    <button class="dm-submit" id="dm-next-btn" onclick="DM.next()">继续 (空格)</button>
+  </div>
+
+  <div id="dm-summary" class="dm-panel" style="display:none">
+    <div id="dm-sum-body"></div>
+    <div class="dm-sum-btns" id="dm-sum-btns"></div>
+  </div>
+</div>

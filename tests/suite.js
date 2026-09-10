@@ -551,6 +551,312 @@
     showHome();
   });
 
+
+  // ==========================================================
+  G('P3 材料与评分');
+
+  T('随机字符序列内部不重复', function () {
+    for (var n = 0; n < 40; n++) {
+      var c = MT2.MAT.pickChars(8);
+      eq(c.length, 8);
+      var seen = {};
+      c.forEach(function (x) { assert(!seen[x], '序列里出现了重复字 ' + x); seen[x] = 1; });
+    }
+  });
+
+  T('材料库避免重复取同一段文本', function () {
+    reset();
+    var t1 = MT2.MAT.TEXTS.filter(function (t) { return t.tier === 1; }).length;
+    var got = {};
+    for (var i = 0; i < t1; i++) got[MT2.MAT.pickText(1).text] = 1;
+    eq(Object.keys(got).length, t1, '还没用完就开始重复了');
+    assert(MT2.MAT.freshTextCount(1) === 0, 'usedLedger 没记上');
+  });
+
+  T('序列评分：项目正确与位置正确分开算', function () {
+    var s1 = MT2.MAT.scoreSeq(['海', '钟', '纸'], ['海', '钟', '纸']);
+    eq(s1.positions, 3); eq(s1.items, 3); eq(s1.perfect, true);
+    var s2 = MT2.MAT.scoreSeq(['海', '钟', '纸'], ['海', '纸', '钟']);
+    eq(s2.positions, 1, '位置只有第一个对');
+    eq(s2.items, 3, '三个字都记住了，只是顺序错');
+    eq(s2.perfect, false);
+    var s3 = MT2.MAT.scoreSeq(['海', '钟', '纸'], []);
+    eq(s3.positions, 0); eq(s3.items, 0);
+  });
+
+  T('序列评分：多写的字不会把正确率刷上去', function () {
+    var s = MT2.MAT.scoreSeq(['海', '钟'], ['海', '钟', '纸', '月', '桥']);
+    eq(s.items, 2, '多写的字被算成了记住');
+    assert(s.itemAcc <= 1, 'itemAcc 超过 100%');
+    eq(s.perfect, false, '多写了还算完美');
+  });
+
+  T('序列评分：把同一个字写几遍不能顶几个字', function () {
+    // 只记住一个字、剩下靠重复凑数，应该只算记住一个
+    var s = MT2.MAT.scoreSeq(['海', '钟', '纸'], ['海', '海', '海']);
+    eq(s.items, 1, '重复的字被反复计数');
+    near(s.itemAcc, 1 / 3, 0.001, '正确率被重复刷上去了');
+    var s2 = MT2.MAT.scoreSeq(['海', '钟'], ['海', '海', '钟']);
+    eq(s2.items, 2, '多写一遍的字被算成额外记住');
+  });
+
+  T('文本评分：逐字 / 关键词 / 顺序 三项独立', function () {
+    var t = '门口那棵老槐树昨夜被风吹断了。';
+    var keys = ['门口', '老槐树', '昨夜', '风', '吹断'];
+    var full = MT2.MAT.scoreText(t, t, keys);
+    near(full.verbatim, 1, 0.001, '原样抄写的逐字分');
+    near(full.keyword, 1, 0.001, '关键词');
+    near(full.order, 1, 0.001, '顺序');
+    var none = MT2.MAT.scoreText(t, '完全不相干的内容', keys);
+    eq(none.keysHit, 0);
+    assert(none.verbatim < 0.3, '不相干的内容拿到了 ' + none.verbatim);
+  });
+
+  T('文本评分：关键词齐但顺序颠倒，顺序分要掉', function () {
+    var t = '他先去银行取了钱，又绕到药店买了退烧药。';
+    var keys = ['银行', '取钱', '药店', '退烧药'];
+    var rev = MT2.MAT.scoreText(t, '退烧药，药店，取钱，银行', keys);
+    near(rev.keyword, 1, 0.001, '关键词应该全中');
+    assert(rev.order < 0.6, '顺序完全颠倒却拿了 ' + rev.order);
+  });
+
+  T('文本评分：只记住大意、没记住原话时逐字分低但关键词分不为零', function () {
+    var t = '会议推迟到下周二上午十点，地点从二楼小厅改到了四楼的东侧会议室。';
+    var keys = ['推迟', '下周二', '上午十点', '二楼小厅', '四楼', '东侧会议室'];
+    var s = MT2.MAT.scoreText(t, '会议改到下周二，换到四楼开', keys);
+    assert(s.keysHit >= 2, '关键词一个都没匹配上');
+    assert(s.verbatim < 0.6, '逐字分不该这么高');
+  });
+
+  // ==========================================================
+  G('P3 直接记忆流程');
+
+  function dmStage(plan, kind) {
+    reset();
+    MT2.db.direct = { trials: [], baselines: [], adaptive: {} };
+    DM.start(kind || 'training', plan, null);
+  }
+  function dmType(str) { document.getElementById('dm-seq-input').value = str; }
+
+  T('呈现阶段结束后材料被清空', function () {
+    dmStage([{ kind: 'random', len: 3, exposureMs: 10 }]);
+    assert(document.getElementById('dm-material').innerHTML.length > 0, '呈现阶段没显示材料');
+    DM.trial.target = ['海', '钟', '纸'];
+    clearTimeout(DM.exposeTimer);
+    DM.recall();
+    eq(document.getElementById('dm-expose').style.display, 'none');
+    eq(document.getElementById('dm-recall').style.display, 'block');
+  });
+
+  T('回忆阶段不给任何选项（自主回忆，不是再认）', function () {
+    dmStage([{ kind: 'random', len: 4, exposureMs: 10 }]);
+    DM.recall();
+    var panel = document.getElementById('dm-recall');
+    eq(panel.querySelectorAll('button.mt-calib-opt, .dm-option').length, 0, '出现了备选项');
+    var btns = panel.querySelectorAll('button');
+    eq(btns.length, 2, '回忆面板应该只有提交和想不起来两个按钮');
+  });
+
+  T('提交后按位置逐格核对', function () {
+    dmStage([{ kind: 'random', len: 3, exposureMs: 10 }]);
+    DM.trial.target = ['海', '钟', '纸'];
+    DM.recall(); dmType('海纸钟'); DM.submit();
+    eq(DM.trial.score.positions, 1);
+    eq(DM.trial.score.items, 3);
+    var slots = document.querySelectorAll('#dm-fb-body .dm-slot');
+    eq(slots.length, 3);
+    assert(slots[0].classList.contains('ok'), '第一格应判对');
+    assert(slots[1].classList.contains('bad'), '第二格应判错');
+  });
+
+  T('「完全想不起来」记 0 分而不是跳过', function () {
+    dmStage([{ kind: 'random', len: 4, exposureMs: 10 }]);
+    DM.trial.target = ['海', '钟', '纸', '月'];
+    DM.recall(); DM.submit(true);
+    eq(DM.trial.score.items, 0);
+    DM.next();
+    eq(MT2.db.direct.trials.length, 1, '空白试次没有被记录');
+    eq(MT2.db.direct.trials[0].scores.item, 0);
+  });
+
+  T('有意义材料必须先自评大意才能继续', function () {
+    dmStage([{ kind: 'meaningful', tier: 1 }]);
+    DM.recall();
+    document.getElementById('dm-text-input').value = '门口的老槐树昨夜被风吹断了';
+    DM.submit();
+    eq(document.getElementById('dm-gist').style.display, '', '没有要求自评大意');
+    eq(document.getElementById('dm-next-btn').disabled, true, '没评就能继续');
+    var before = MT2.db.direct.trials.length;
+    DM.next();
+    eq(MT2.db.direct.trials.length, before, '没评大意却记录了');
+    DM.setGist(0.5);
+    eq(document.getElementById('dm-next-btn').disabled, false);
+    DM.next();
+    eq(MT2.db.direct.trials.length, before + 1);
+    eq(MT2.db.direct.trials[before].scores.gist, 0.5);
+  });
+
+  T('有意义材料写入延迟保持队列，且不重新呈现原文', function () {
+    dmStage([{ kind: 'meaningful', tier: 1 }]);
+    DM.recall();
+    document.getElementById('dm-text-input').value = '随便写点';
+    DM.submit(); DM.setGist(0); DM.next();
+    var q = MT2.db.queue.filter(function (x) { return x.source === 'direct'; });
+    assert(q.length >= 3, '没有排延迟测试，实际 ' + q.length);
+    var labels = q.map(function (x) { return x.label; });
+    assert(labels.indexOf('24h') !== -1, '缺 24h 那一档');
+    assert(q[0].dueTs > Date.now(), '到期时间不在未来');
+  });
+
+  // ==========================================================
+  G('P3 自适应与基线');
+
+  T('难度按块调整，不因单次运气变动', function () {
+    reset();
+    MT2.db.direct = { trials: [], baselines: [], adaptive: {} };
+    var a = MT2.dmAdaptive();
+    a.random.len = 4;
+    for (var i = 0; i < 4; i++) DM.adapt({ kind: 'random', score: { itemAcc: 1 } });
+    eq(MT2.dmAdaptive().random.len, 4, '不满一个块就调难度了');
+    DM.adapt({ kind: 'random', score: { itemAcc: 1 } });
+    eq(MT2.dmAdaptive().random.len, 5, '满一个块、全对，应该升难度');
+    for (var i = 0; i < 5; i++) DM.adapt({ kind: 'random', score: { itemAcc: 0.2 } });
+    eq(MT2.dmAdaptive().random.len, 4, '一直做不对应该降难度');
+  });
+
+  T('难度在中间区间保持不动', function () {
+    reset();
+    MT2.db.direct = { trials: [], baselines: [], adaptive: {} };
+    MT2.dmAdaptive().random.len = 5;
+    for (var i = 0; i < 5; i++) DM.adapt({ kind: 'random', score: { itemAcc: 0.78 } });
+    eq(MT2.dmAdaptive().random.len, 5, '70–85% 区间不该动难度');
+  });
+
+  T('基线计划：长度与次数固定，曝光锁死 3 秒', function () {
+    reset();
+    var plan = MT2.buildBaselinePlan();
+    eq(plan.length, 25);
+    var byLen = {};
+    plan.forEach(function (p) {
+      byLen[p.len] = (byLen[p.len] || 0) + 1;
+      eq(p.exposureMs, 3000, '基线曝光被改了');
+      eq(p.baseline, true);
+    });
+    eq(Object.keys(byLen).sort().join(','), '3,4,5,6,7');
+    Object.keys(byLen).forEach(function (L) { eq(byLen[L], 5, L + ' 项的次数不对'); });
+  });
+
+  T('基线训练不参与自适应', function () {
+    reset();
+    MT2.db.direct = { trials: [], baselines: [], adaptive: {} };
+    MT2.dmAdaptive().random.len = 4;
+    DM.kind = 'baseline';
+    for (var i = 0; i < 10; i++) {
+      DM.record({ kind: 'random', len: 7, baseline: true, exposureMs: 3000, recallMs: 1000,
+                  score: { positionAcc: 1, itemAcc: 1, perfect: true } });
+    }
+    eq(MT2.dmAdaptive().random.len, 4, '基线试次污染了日常难度');
+    DM.kind = 'training';
+  });
+
+  T('容量估计：在 77.5% 那条线上插值', function () {
+    var c = MT2.computeCapacity({ 3: 1.0, 4: 0.96, 5: 0.79, 6: 0.57, 7: 0.31 });
+    assert(c.value > 5 && c.value < 6, '容量落在 ' + c.value + '，应该在 5–6 之间');
+    var ceil = MT2.computeCapacity({ 3: 1.0, 4: 1.0, 5: 1.0 });
+    eq(ceil.ceiling, true, '全部达标时应标为触顶');
+    eq(ceil.text, '≥ 5');
+    var floor = MT2.computeCapacity({ 3: 0.5, 4: 0.3 });
+    eq(floor.below, true, '最短的都不达标时应标为低于下限');
+  });
+
+  T('基线结果按条件存档，条件不同则拒绝比较', function () {
+    reset();
+    MT2.db.direct = { trials: [], baselines: [], adaptive: {} };
+    var mk = function (acc) {
+      return [3, 4, 5, 6, 7].reduce(function (arr, L) {
+        for (var i = 0; i < 5; i++) {
+          arr.push({ kind: 'random', len: L, score: { itemAcc: acc(L) } });
+        }
+        return arr;
+      }, []);
+    };
+    var b1 = MT2.saveBaseline(mk(function (L) { return L <= 4 ? 1 : L === 5 ? 0.8 : 0.4; }));
+    assert(b1.capacity > 4, '容量算错了：' + b1.capacityText);
+    eq(b1.exposureMs, 3000);
+    eq(b1.lens.join(','), '3,4,5,6,7');
+    var b2 = MT2.saveBaseline(mk(function (L) { return L <= 5 ? 1 : L === 6 ? 0.8 : 0.4; }));
+    assert(MT2.baselineComparable(b1, b2), '同条件的两次基线被判为不可比');
+    assert(b2.capacity > b1.capacity, '容量没有反映提升');
+    var b3 = JSON.parse(JSON.stringify(b2)); b3.exposureMs = 5000;
+    assert(!MT2.baselineComparable(b1, b3), '曝光时长不同却判为可比');
+    var b4 = JSON.parse(JSON.stringify(b2)); b4.lens = [3, 4, 5];
+    assert(!MT2.baselineComparable(b1, b4), '长度集合不同却判为可比');
+  });
+
+  T('仪表盘：没跑过基线时明确说日常训练不能当基线', function () {
+    reset();
+    MT2.db.direct = { trials: [], baselines: [], adaptive: {} };
+    for (var i = 0; i < 3; i++) {
+      DM.record({ kind: 'random', len: 4, exposureMs: 3000, recallMs: 900,
+                  score: { positionAcc: 0.75, itemAcc: 0.75, perfect: false } });
+    }
+    MT2.showDash();
+    var html = document.getElementById('mt-dash-body').innerHTML;
+    assert(html.indexOf('还没跑过标准化基线') > -1, '没有提示缺基线');
+    assert(html.indexOf('自适应') > -1, '没有说明自适应长度不能当基线');
+    showHome();
+  });
+
+  T('仪表盘：随机序列的迁移限制要写在明处', function () {
+    reset();
+    MT2.db.direct = { trials: [], baselines: [], adaptive: {} };
+    DM.record({ kind: 'random', len: 4, exposureMs: 3000, recallMs: 900,
+                score: { positionAcc: 1, itemAcc: 1, perfect: true } });
+    MT2.showDash();
+    var html = document.getElementById('mt-dash-body').innerHTML;
+    assert(html.indexOf('不太会迁移') > -1, '仪表盘没有标注迁移有限');
+    showHome();
+  });
+
+  // ==========================================================
+  G('P3 今日训练分段');
+
+  T('15/20 分钟含直接记忆段，5 分钟不含', function () {
+    reset();
+    var s5 = MT2.buildSegments('5m').map(function (g) { return g.type; });
+    eq(s5.join(','), 'retrieval', '5 分钟速练不该塞直接记忆');
+    var s15 = MT2.buildSegments('15m');
+    eq(s15.map(function (g) { return g.type; }).join(','), 'direct,retrieval');
+    eq(s15[0].minutes, 5);
+    eq(s15[1].minutes, 10, '剩下的时间没有留给提取');
+    var s20 = MT2.buildSegments('20m');
+    eq(s20[1].minutes, 15);
+  });
+
+  T('直接记忆段结束后自动进入提取段', function () {
+    reset();
+    MT2.db.direct = { trials: [], baselines: [], adaptive: {} };
+    MT2.session = { segs: MT2.buildSegments('15m'), i: -1, preset: '15m' };
+    MT2.runNextSegment();
+    eq(document.getElementById('screen-direct').style.display, 'block', '没有先进直接记忆');
+    DM.plan = [];            // 假装这一段已经做完
+    DM.idx = 0;
+    DM.finish();
+    DM.continueSession();
+    eq(document.getElementById('screen-training').style.display, 'block', '没有接上提取段');
+    assert(deck.length > 0, '提取段没有题');
+    eq(currentMode, 'today');
+  });
+
+  T('直接记忆计划里两类材料都有', function () {
+    reset();
+    var plan = MT2.buildDirectPlan(300);
+    var kinds = {};
+    plan.forEach(function (p) { kinds[p.kind] = (kinds[p.kind] || 0) + 1; });
+    assert(kinds.random > 0, '没有随机序列');
+    assert(kinds.meaningful > 0, '没有有意义材料');
+  });
+
   // ==========================================================
   fakeToday(null);
   reset();

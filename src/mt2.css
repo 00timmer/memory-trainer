@@ -1,5 +1,5 @@
 /* ===== MT2 三系统重构样式 ===== */
-.mt-page { padding: 0 0 40px; }
+.mt-page { display:none; max-width: 600px; margin: 0 auto; padding: 20px 0 40px; }
 .mt-card { background:#232733; border-radius:14px; padding:14px; margin:12px 10px; }
 .mt-card-h { font-size:15px; font-weight:600; margin-bottom:10px; }
 .mt-card-h .mt-sub { font-size:12px; color:#8a90a0; font-weight:400; margin-left:6px; }
@@ -70,3 +70,57 @@
 .mt-today-lens button.on { background:rgba(255,255,255,.30); font-weight:600; }
 .mt-fold { margin:0 10px 10px; }
 .mt-fold-h { font-size:13px; color:#8a90a0; padding:9px 2px; cursor:pointer; user-select:none; }
+
+/* ===== System A 直接记忆 ===== */
+.dm-panel { padding: 0 20px; }
+.dm-hint { font-size: 12.5px; color: #8a90a0; text-align: center; margin: 14px 0 10px; line-height: 1.6; }
+.dm-bar { height: 5px; background: #22262f; border-radius: 3px; overflow: hidden; margin-bottom: 26px; }
+.dm-bar .fill { height: 100%; background: #4a9eff; width: 100%; }
+.dm-material { text-align: center; min-height: 160px; display: flex; align-items: center;
+               justify-content: center; flex-wrap: wrap; gap: 14px; padding: 10px 0; }
+.dm-material .ch { font-size: 46px; font-weight: 600; letter-spacing: 2px; }
+.dm-material .txt { font-size: 20px; line-height: 1.95; text-align: left; letter-spacing: .5px; }
+#dm-seq-input { width: 100%; box-sizing: border-box; background: #1b1f28; color: #eaeef5;
+                border: 1px solid #333a48; border-radius: 10px; padding: 14px;
+                font-size: 24px; letter-spacing: 4px; text-align: center; }
+#dm-text-input { width: 100%; box-sizing: border-box; background: #1b1f28; color: #eaeef5;
+                 border: 1px solid #333a48; border-radius: 10px; padding: 12px;
+                 font-size: 16px; line-height: 1.8; resize: vertical; }
+.dm-typed { text-align: center; font-size: 13px; color: #8a90a0; margin-top: 8px; min-height: 18px; }
+.dm-submit { width: 100%; background: #2f6fd0; color: #fff; border: none; border-radius: 11px;
+             padding: 14px; font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 14px; }
+.dm-skip { width: 100%; background: transparent; color: #8a90a0; border: none;
+           padding: 12px; font-size: 13px; cursor: pointer; }
+.dm-cmp { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 12px 0; }
+.dm-slot { min-width: 46px; padding: 9px 6px; border-radius: 9px; text-align: center;
+           font-size: 22px; font-weight: 600; }
+.dm-slot.ok { background: #22321f; color: #8ee6a8; }
+.dm-slot.bad { background: #3a2222; color: #f0a0a0; }
+.dm-slot .sub { display: block; font-size: 11px; font-weight: 400; color: #8a90a0; margin-top: 3px; }
+.dm-scores { display: flex; gap: 8px; margin: 12px 0; }
+.dm-orig { background: #1b1f28; border-radius: 10px; padding: 12px; font-size: 15px;
+           line-height: 1.9; margin: 10px 0; }
+.dm-orig mark { background: rgba(74,158,255,.22); color: inherit; border-radius: 3px; padding: 0 2px; }
+.dm-yours { background: #1b1f28; border-radius: 10px; padding: 12px; font-size: 14px;
+            line-height: 1.8; color: #b8bec9; margin: 10px 0; }
+.dm-gist-btns { display: flex; gap: 8px; }
+.dm-gist-btns button { flex: 1; background: #2f3545; color: #dfe3ea; border: none;
+                       border-radius: 9px; padding: 12px 6px; font-size: 13px; cursor: pointer; }
+.dm-gist-btns button.on { background: #2f6fd0; color: #fff; }
+.dm-sum-btns { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; }
+.dm-sum-btns button { background: #2f3545; color: #dfe3ea; border: none; border-radius: 10px;
+                      padding: 13px; font-size: 14px; cursor: pointer; }
+.dm-sum-btns button.primary { background: #2f6fd0; color: #fff; font-weight: 600; }
+.dm-curve { margin: 12px 0; }
+.dm-curve-row { display: flex; align-items: center; gap: 9px; margin-bottom: 6px; font-size: 12.5px; }
+.dm-curve-row .lab { width: 46px; color: #8a90a0; }
+.dm-curve-row .track { flex: 1; height: 15px; background: #1b1f28; border-radius: 4px; overflow: hidden; display: block; }
+.dm-curve-row .fill { display: block; height: 100%; background: #4a9eff; }
+.dm-curve-row .val { width: 42px; text-align: right; }
+.dm-cap { font-size: 30px; font-weight: 700; }
+.dm-entry { margin: 0 10px 10px; background: #232733; border-radius: 14px; padding: 14px; cursor: pointer; }
+.dm-entry .t { font-size: 15px; font-weight: 600; }
+.dm-entry .d { font-size: 12px; color: #8a90a0; margin-top: 4px; line-height: 1.6; }
+
+/* 新屏幕的头部要和原有训练屏一样留出左右边距 */
+.mt-page .training-header { padding-left: 20px; padding-right: 20px; box-sizing: border-box; }
