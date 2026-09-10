@@ -20,7 +20,7 @@ MT2.tierOf = function (sec) {
 };
 
 MT2.DIR_LABEL = { fwd: '正向', rev: '反向', multi: '连读' };
-MT2.STATUS_LABEL = ['未测', '能正确提取', '能快速提取', '隔天仍能快速提取'];
+MT2.STATUS_LABEL = ['未测/样本不足', '能正确提取', '能快速提取', '隔天仍能快速提取'];
 MT2.MAX_TRIALS = 30;      // 每个 code+direction 保留的试次数
 MT2.RECENT = 5;           // 滚动窗口
 
