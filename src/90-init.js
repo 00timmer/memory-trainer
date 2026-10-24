@@ -181,5 +181,10 @@ finishSession = function () {
   if (ss) ss.value = String(MT2.cfg('speedTarget'));
   var rs = document.getElementById('mt-set-rate');
   if (rs) rs.value = String(MT2.cfg('audioRate') || 1);
+  // base.html 初始化时，后加的内置牌组（摩尔斯）还没注册，上次选的牌组会被退回 numbers；
+  // 标签也是用旧的 renderTabs 画的。这里按注册完的牌组表重来一遍。
+  var savedDeck = localStorage.getItem('mt_deck');
+  if (savedDeck && getDeckInfo(savedDeck)) currentDeckId = savedDeck;
+  renderTabs();
   showHome();
 })();

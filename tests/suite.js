@@ -1218,6 +1218,219 @@
   });
 
   // ==========================================================
+  G('摩尔斯电码');
+
+  function mzReset() {
+    reset();
+    modeSettings = {}; allWeak = {};
+    currentDeckId = 'morse';
+  }
+  function mzStage(cards, opts) {
+    opts = opts || {};
+    mzReset();
+    MT2.setCfg('calibRate', opts.calibRate === undefined ? 0 : opts.calibRate);
+    if (opts.story !== undefined) MT2.setCfg('morseStory', opts.story);
+    if (opts.wpm) MT2.setCfg('morseWpm', opts.wpm);
+    currentMode = opts.mode || 'random';
+    deck = cards; deckIndex = 0;
+    showScreen('training');
+    showCurrentCard();
+  }
+  // 独立写一份国际摩尔斯表（点划），和 1/2 写法互相核对
+  var ITU = { A:'.-',B:'-...',C:'-.-.',D:'-..',E:'.',F:'..-.',G:'--.',H:'....',I:'..',J:'.---',
+    K:'-.-',L:'.-..',M:'--',N:'-.',O:'---',P:'.--.',Q:'--.-',R:'.-.',S:'...',T:'-',U:'..-',
+    V:'...-',W:'.--',X:'-..-',Y:'-.--',Z:'--..','0':'-----','1':'.----','2':'..---',
+    '3':'...--','4':'....-','5':'.....','6':'-....','7':'--...','8':'---..','9':'----.' };
+
+  T('26 个字母 + 10 个数字的 1/2 编码与国际摩尔斯一致', function () {
+    eq(Object.keys(MZ.CODES).length, 36);
+    Object.keys(ITU).forEach(function (k) {
+      eq(MZ.CODES[k], ITU[k].replace(/\./g, '1').replace(/-/g, '2'), k);
+    });
+  });
+
+  T('每个故事的拆分拼回去就是编码，四位一律 2+2', function () {
+    Object.keys(MZ.STORIES).forEach(function (k) {
+      var sp = MZ.STORIES[k].split;
+      eq(sp.replace(/\+/g, ''), MZ.CODES[k], k + ' 拆分');
+      if (MZ.CODES[k].length === 4) eq(sp.split('+').map(function (x) { return x.length; }).join(), '2,2', k);
+    });
+  });
+
+  T('三位镜像对不讲成同一句话：单信号在开头说「先」，在结尾说「最后」', function () {
+    Object.keys(MZ.STORIES).forEach(function (k) {
+      var s = MZ.STORIES[k];
+      if (MZ.CODES[k].length !== 3 || k === 'S') return;
+      var parts = s.split.split('+');
+      if (parts[0].length === 1) assert(s.story.indexOf('先') === 0, k + ' 开头单信号却没说「先」');
+      if (parts[1].length === 1) assert(s.story.indexOf('最后') !== -1, k + ' 结尾单信号却没说「最后」');
+    });
+    [['W','G'],['D','U'],['K','R']].forEach(function (p) {
+      assert(MZ.STORIES[p[0]].story !== MZ.STORIES[p[1]].story, p.join('/'));
+    });
+  });
+
+  T('牌组注册：四组覆盖全部 36 个编码，答案同时给 1/2 和点划', function () {
+    mzReset();
+    var all = [];
+    getCodeGroups().forEach(function (g) { all = all.concat(g.codes); });
+    eq(all.length, 36);
+    eq(getName('A'), '12  ·—');
+    assert(getConfusable().length >= 10, '没有镜像/反相混淆对');
+  });
+
+  T('第一次进入：默认范围是第一组 ETIANM，允许重复；已有设置不被覆盖', function () {
+    mzReset();
+    MZ.seedRange();
+    eq(modeSettings.morse.random.selected.join(''), 'ETIANM');
+    eq(modeSettings.morse.random.repeat, true);
+    modeSettings.morse.random.selected = ['E'];
+    MZ.seedRange();
+    eq(modeSettings.morse.random.selected.join(''), 'E', '再次进入把用户的范围冲掉了');
+  });
+
+  T('字母→编码：答对时按设置显示故事，关掉后不显示', function () {
+    mzStage([{ type: 'forward', codes: ['A'] }], { story: true });
+    commitAfter(0.9);
+    var st = document.getElementById('mz-story');
+    eq(st.style.display, '');
+    assert(st.textContent.indexOf('特兰克斯') !== -1, '故事没出来');
+    mzStage([{ type: 'forward', codes: ['A'] }], { story: false });
+    commitAfter(0.9);
+    var st2 = document.getElementById('mz-story');
+    assert(!st2 || st2.style.display === 'none', '关掉了还显示故事');
+  });
+
+  T('答错一定提示正确编码和桩故事，即使关了故事显示', function () {
+    mzStage([{ type: 'forward', codes: ['G'] }], { story: false });
+    f2DontKnow();
+    var st = document.getElementById('mz-story');
+    eq(st.style.display, '');
+    assert(st.textContent.indexOf('221') !== -1 && st.textContent.indexOf('17') !== -1, st.textContent);
+  });
+
+  T('自评「不会」（看完答案判错）也提示故事', function () {
+    mzStage([{ type: 'forward', codes: ['K'] }], { story: false });
+    commitAfter(1.0);
+    judgeCard('dont_know');
+    eq(document.getElementById('mz-story').style.display, '');
+  });
+
+  T('数字不编故事，只给规律', function () {
+    mzStage([{ type: 'forward', codes: ['7'] }], { story: false });
+    f2DontKnow();
+    var t = document.getElementById('mz-story').textContent;
+    assert(t.indexOf('前 2 个长') !== -1, t);
+  });
+
+  T('听音：播放中不能承诺，延迟从播完开始算，记在「听音」方向', function () {
+    // 手动控制「播完」的时刻：同步 thenable（异步测试会和后面的同步测试交错）
+    var realPlay = MZ.play, finish = null;
+    MZ.play = function () {
+      MZ.playing = true;
+      return { then: function (cb) { finish = function () { MZ.playing = false; cb(true); }; } };
+    };
+    mzStage([{ type: 'audio', codes: ['E'] }, { type: 'audio', codes: ['T'] }]);
+    MZ.play = realPlay;
+    eq(document.getElementById('card-prompt').textContent, '🔊');
+    mtCommit();
+    eq(mtCommitted, false, '播放中按键被接受了');
+    eq(document.getElementById('f2-controls').style.display, 'none');
+    busy(300);          // 播放耗时 0.3s，不该算进延迟
+    finish();
+    eq(document.getElementById('f2-controls').style.display, 'flex', '播完没有放出按键');
+    busy(200);
+    mtCommit();
+    judgeCard('remember');
+    var r = MT2.recRO('morse', 'E', 'aud');
+    assert(r && r.trials.length === 1, '没记到听音方向');
+    near(r.trials[0].ms, 0.2, 0.1, '延迟（应只含播完之后）');
+    eq(MT2.recRO('morse', 'E', 'fwd'), null, '听音污染了字母→编码方向');
+  });
+
+  T('音长按 WPM 算：点 1、划 3、元素间 1、字母间放宽到 6 单位', function () {
+    reset(); MT2.setCfg('morseWpm', 20);         // 1 单位 = 60ms
+    near(MZ.schedule(['12']).total, 0.06 * 5, 1e-9, 'A');
+    near(MZ.schedule(['2', '1']).total, 0.06 * (3 + 6 + 1), 1e-9, 'TE');
+    MT2.setCfg('morseWpm', 10);
+    near(MZ.schedule(['1']).total, 0.12, 1e-9, 'WPM 改了时长没变');
+  });
+
+  T('听音的校准试次选项是字母，不是编码', function () {
+    mzReset();
+    var opts = mtBuildCalibOptions({ type: 'audio', codes: ['A'] });
+    // 范围默认为全部 36 个
+    assert(opts && opts.length === 4, '没生成选项');
+    mtShowCalib({ type: 'audio', codes: ['A'] }, opts);
+    var labels = [].map.call(document.querySelectorAll('#mt-calib .mt-calib-opt'), function (b) { return b.textContent; });
+    labels.forEach(function (l) { assert(/^[A-Z0-9]$/.test(l), '选项 ' + l + ' 不是字母'); });
+  });
+
+  T('单词只从当前字母范围里出，看码解码的提示是「21 / 1 / 2」格式', function () {
+    mzReset(); MZ.seedRange();
+    currentMode = 'morse-wdec';
+    var d = buildDeck('morse-wdec');
+    eq(d.length, 10);
+    d.forEach(function (c) {
+      eq(c.type, 'wdec');
+      assert(/^[ETIANM]+$/.test(c.codes[0]), c.codes[0] + ' 用了范围外的字母');
+    });
+    mzStage([{ type: 'wdec', codes: ['NET'] }], { mode: 'morse-wdec' });
+    eq(document.getElementById('card-prompt').textContent, '21 / 1 / 2');
+  });
+
+  T('单词答错按单词记账，不进旧弱项表，不污染单字母统计', function () {
+    mzStage([{ type: 'wdec', codes: ['TEAM'] }], { mode: 'morse-wdec' });
+    f2DontKnow();
+    assert(MT2.recRO('morse', 'TEAM', 'wdec'), '没按单词记账');
+    eq(MT2.recRO('morse', 'T', 'fwd'), null);
+    assert(!allWeak.morse || !allWeak.morse.TEAM, '单词进了旧弱项表');
+  });
+
+  T('字母范围拼不出 5 个单词时拒绝开始并说明', function () {
+    mzReset(); MZ.seedRange(); showScreen('home');
+    modeSettings.morse['morse-wenc'].selected = ['E', 'T'];
+    var msg = '', _a = window.alert;
+    window.alert = function (m) { msg = m; };
+    currentMode = 'morse-wenc';
+    startMode('morse-wenc');
+    window.alert = _a;
+    assert(msg.indexOf('太少') !== -1, '没有拒绝');
+    eq(document.getElementById('screen-training').style.display, 'none', '还是进了训练屏');
+  });
+
+  // ==========================================================
+  G('顶部牌组下拉');
+
+  T('标签改成下拉：每个可见牌组一个选项，隐藏的不出现', function () {
+    reset();
+    hiddenDecks = ['poker'];
+    renderTabs();
+    var sel = document.getElementById('deck-select');
+    assert(sel && sel.tagName === 'SELECT', '没有下拉');
+    eq(document.querySelectorAll('#deck-tabs .deck-tab').length, 0, '旧标签还在');
+    var vals = [].map.call(sel.options, function (o) { return o.value; });
+    eq(vals.length, getAllDeckIds().length);
+    assert(vals.indexOf('poker') === -1, '隐藏的牌组还在下拉里');
+    assert(vals.indexOf('morse') !== -1, '摩尔斯不在下拉里');
+    assert(document.querySelector('#deck-tabs [aria-label="恢复隐藏的牌组"]'), '有隐藏牌组时缺恢复按钮');
+    hiddenDecks = [];
+  });
+
+  T('选下拉就切换牌组', function () {
+    reset(); hiddenDecks = [];
+    renderTabs();
+    var sel = document.getElementById('deck-select');
+    sel.value = 'morse';
+    sel.dispatchEvent(new Event('change'));
+    eq(currentDeckId, 'morse');
+    eq(document.getElementById('deck-select').value, 'morse');
+    eq(document.getElementById('mz-panel').style.display, '', '摩尔斯面板没出来');
+    switchDeck('numbers');
+    eq(document.getElementById('mz-panel').style.display, 'none', '换走后面板还在');
+  });
+
+  // ==========================================================
   fakeToday(null);
   reset();
 
