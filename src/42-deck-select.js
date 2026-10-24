@@ -4,7 +4,7 @@
 // 长按隐藏的手势在 <select> 上做不了，改成旁边的「⋯」按钮。
 // ============================================================
 var DECK_CATEGORIES = [
-  { label: '编码', ids: ['numbers', 'poker', 'locations', 'morse'] },
+  { label: '编码', ids: ['numbers', 'letters', 'poker', 'locations', 'morse'] },
   { label: '日语', ids: ['hiragana', 'katakana', 'jpwords', 'jpkatawords', 'jpparticles'] },
   { label: '注音', ids: ['bopomofo', 'bopomofocb'] },
   { label: '儿童', ids: ['kidsnumbers', 'kidsabc'] }

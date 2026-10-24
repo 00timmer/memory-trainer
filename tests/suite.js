@@ -1400,6 +1400,69 @@
   });
 
   // ==========================================================
+  G('字母编码');
+
+  function lzStage(cards) {
+    reset(); modeSettings = {}; allWeak = {};
+    currentDeckId = 'letters';
+    MT2.setCfg('calibRate', 0);
+    currentMode = 'random';
+    deck = cards; deckIndex = 0;
+    showScreen('training');
+    showCurrentCard();
+  }
+
+  T('26 个大写 + 已定的小写 a–g 都在，空着的 h 不收录', function () {
+    reset(); currentDeckId = 'letters';
+    var all = [];
+    getCodeGroups().forEach(function (g) { all = all.concat(g.codes); });
+    eq(all.length, 33);
+    eq(getAllCodes().length, 33, '分组和牌组数据对不上');
+    assert(all.indexOf('h') === -1, '空的 h 被收录了');
+    eq(getName('A'), '牛顿'); eq(getName('a'), '马斯克'); eq(getName('Y'), '特兰克斯');
+  });
+
+  T('答案里不含桥接词 —— 反向卡不会被 Apple 泄题', function () {
+    reset(); currentDeckId = 'letters';
+    Object.keys(LZ.ITEMS).forEach(function (k) {
+      var bridge = LZ.ITEMS[k][1].split(' · ')[0];
+      assert(getName(k).indexOf(bridge) === -1, k + ' 的答案里有桥接词');
+    });
+    lzStage([{ type: 'reverse', codes: ['A'] }]);
+    var p = document.getElementById('card-prompt').textContent;
+    eq(p, '牛顿');
+    var st = document.getElementById('mz-story');
+    assert(!st || st.style.display === 'none', '揭晓前就显示了提示');
+  });
+
+  T('揭晓后显示桥接词；答错也显示', function () {
+    lzStage([{ type: 'forward', codes: ['A'] }]);
+    commitAfter(0.8);
+    var st = document.getElementById('mz-story');
+    eq(st.style.display, '');
+    assert(st.textContent.indexOf('Apple') !== -1, st.textContent);
+    lzStage([{ type: 'forward', codes: ['g'] }]);
+    f2DontKnow();
+    assert(document.getElementById('mz-story').textContent.indexOf('golf') !== -1);
+  });
+
+  T('大小写分开记账，混淆对是同字母的大小写', function () {
+    lzStage([{ type: 'forward', codes: ['a'] }]);
+    commitAfter(0.8); judgeCard('remember');
+    assert(MT2.recRO('letters', 'a', 'fwd'), '小写没记账');
+    eq(MT2.recRO('letters', 'A', 'fwd'), null, '小写记到了大写上');
+    var pairs = getConfusable().map(function (x) { return x.join(''); });
+    assert(pairs.indexOf('Aa') !== -1 && pairs.indexOf('Gg') !== -1, pairs.join());
+  });
+
+  T('换到别的牌组不显示提示', function () {
+    stage([{ type: 'forward', codes: ['11'] }]);
+    commitAfter(0.8);
+    var st = document.getElementById('mz-story');
+    assert(!st || st.style.display === 'none', '0-99 数字牌组也显示了提示');
+  });
+
+  // ==========================================================
   G('顶部牌组下拉');
 
   T('标签改成下拉：每个可见牌组一个选项，隐藏的不出现', function () {
@@ -1413,6 +1476,7 @@
     eq(vals.length, getAllDeckIds().length);
     assert(vals.indexOf('poker') === -1, '隐藏的牌组还在下拉里');
     assert(vals.indexOf('morse') !== -1, '摩尔斯不在下拉里');
+    assert(vals.indexOf('letters') !== -1, '字母编码不在下拉里');
     assert(document.querySelector('#deck-tabs [aria-label="恢复隐藏的牌组"]'), '有隐藏牌组时缺恢复按钮');
     hiddenDecks = [];
   });

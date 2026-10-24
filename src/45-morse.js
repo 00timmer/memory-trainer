@@ -306,13 +306,20 @@ MZ.storyEl = function () {
   return el;
 };
 
+// 其他牌组也可以在揭晓后挂提示（如字母编码的桥接词）：MZ.HINTS[deckId] = function (code) → 文本
+MZ.HINTS = {};
+MZ.hasHints = function () { return currentDeckId === 'morse' || !!MZ.HINTS[currentDeckId]; };
+
 MZ.showStory = function (force) {
-  if (currentDeckId !== 'morse') return;
+  if (!MZ.hasHints()) return;
   var card = deck[deckIndex];
   if (!card) return;
-  if (!force && !MT2.cfg('morseStory')) return;
   var lines;
-  if (MZ.WORD_TYPES[card.type]) {
+  if (currentDeckId !== 'morse') {
+    lines = [MZ.HINTS[currentDeckId](card.codes[0])];   // 桥接词提示：揭晓后总是显示
+  } else if (!force && !MT2.cfg('morseStory')) {
+    return;
+  } else if (MZ.WORD_TYPES[card.type]) {
     var w = card.codes[0];
     lines = w.split('').map(function (ch) { return ch + ' ' + MZ.CODES[ch] + ' ' + MZ.dots(MZ.CODES[ch]); });
     lines = [lines.join('　')];
@@ -391,7 +398,7 @@ f2DontKnow = function () {
   if (MZ.playing) return;
   var was = mtCommitted;
   _mzOrigDontKnow();
-  if (!was && currentDeckId === 'morse') { MZ.showStory(true); MZ.afterReveal(); }
+  if (!was && MZ.hasHints()) { MZ.showStory(true); MZ.afterReveal(); }
 };
 
 MZ.afterReveal = function () {
@@ -415,20 +422,20 @@ var _mzOrigPickCalib = mtPickCalib;
 mtPickCalib = function (chosen, correct, idx) {
   var was = revealed;
   _mzOrigPickCalib(chosen, correct, idx);
-  if (!was && currentDeckId === 'morse') { MZ.showStory(chosen !== correct); MZ.afterReveal(); }
+  if (!was && MZ.hasHints()) { MZ.showStory(chosen !== correct); MZ.afterReveal(); }
 };
 
 var _mzOrigShowAnswer = mtShowAnswerAndVerify;
 mtShowAnswerAndVerify = function () {
   _mzOrigShowAnswer();
-  if (currentDeckId === 'morse') { MZ.showStory(false); MZ.afterReveal(); }
+  if (MZ.hasHints()) { MZ.showStory(false); MZ.afterReveal(); }
 };
 
 // 自评「不会/错」：一定提示故事（答错时告诉你正确编码 + 对应的桩）
 var _mzOrigRecord = mtRecordAndAdvance;
 mtRecordAndAdvance = function (result, isCalib) {
   _mzOrigRecord(result, isCalib);
-  if (currentDeckId === 'morse' && result === 'dont_know' && mtAwaitContinue) MZ.showStory(true);
+  if (MZ.hasHints() && result === 'dont_know' && mtAwaitContinue) MZ.showStory(true);
 };
 
 // 离开训练屏时停掉声音
