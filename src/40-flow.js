@@ -211,8 +211,8 @@ function mtShowLatencyReadout(extra) {
   var tier = MT2.tierOf(mtLatency);
   var txt = '⏱ ' + mtLatency.toFixed(2) + 's';
   if (tier) txt += ' · <span style="color:' + tier.color + '">' + tier.label + '</span>';
-  if (mtTimedOut) txt += ' · <span style="color:#f0574a">超时</span>';
-  if (mtBg) txt += ' · <span style="color:#888">切后台，本次不计入</span>';
+  if (mtTimedOut) txt += ' · <span style="color:#d93025">超时</span>';
+  if (mtBg) txt += ' · <span style="color:#6b7280">切后台，本次不计入</span>';
   if (extra) txt += ' · ' + extra;
   hint.innerHTML = txt;
   hint.style.display = '';

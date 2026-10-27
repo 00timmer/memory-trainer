@@ -57,18 +57,18 @@ MT2.renderDashboard = function () {
       kpi('自动化占比', fmtP(s.autoPct)) +
       '</div>';
     h += '<div class="mt-kpis">' +
-      kpi('错项', s.wrongItems.length, s.wrongItems.length ? '#f0574a' : '') +
-      kpi('慢项', s.slowItems.length, s.slowItems.length ? '#f0883e' : '') +
+      kpi('错项', s.wrongItems.length, s.wrongItems.length ? '#d93025' : '') +
+      kpi('慢项', s.slowItems.length, s.slowItems.length ? '#d0601a' : '') +
       kpi('到期待练', s.dueItems.length) +
       kpi('反向中位', fmtS(rs.median)) +
       '</div>';
     h += '<div class="mt-statusbar">' + MT2.STATUS_LABEL.map(function (l, i) {
       var pct = codes.length ? s.byStatus[i] / codes.length * 100 : 0;
-      var cols = ['#3a3f4b', '#e8c547', '#8bd450', '#3ddc84'];
+      var cols = ['#cfd4dc', '#a06a00', '#5a9e1e', '#1e9e52'];
       return '<div class="mt-statusseg" style="width:' + pct + '%;background:' + cols[i] + '" title="' + l + ' ' + s.byStatus[i] + '"></div>';
     }).join('') + '</div>';
     h += '<div class="mt-legend">' + MT2.STATUS_LABEL.map(function (l, i) {
-      var cols = ['#3a3f4b', '#e8c547', '#8bd450', '#3ddc84'];
+      var cols = ['#cfd4dc', '#a06a00', '#5a9e1e', '#1e9e52'];
       return '<span><i style="background:' + cols[i] + '"></i>' + l + ' ' + s.byStatus[i] + '</span>';
     }).join('') + '</div>';
 
@@ -136,11 +136,11 @@ MT2.renderMap = function () {
   var el = document.getElementById('mt-map-body');
   var h = '<div class="mt-maplegend">';
   MT2.TIERS.forEach(function (t) { h += '<span><i style="background:' + t.color + '"></i>' + t.label + '</span>'; });
-  h += '<span><i style="background:#3a3f4b"></i>未测</span></div><div class="mt-grid">';
+  h += '<span><i style="background:#cfd4dc"></i>未测</span></div><div class="mt-grid">';
   codes.forEach(function (c) {
     var r = MT2.recRO(deckId, c, 'fwd');
     var tier = (r && r.median !== null) ? MT2.tierOf(r.median) : null;
-    var bg = tier ? tier.color : '#3a3f4b';
+    var bg = tier ? tier.color : '#cfd4dc';
     var w = MT2.weakRO(deckId, c, 'fwd');
     var mark = w.recall.active ? '✗' : w.speed.active ? '🐢' : '';
     h += '<div class="mt-cell" style="background:' + bg + '" onclick="MT2.mapDetail(\'' +
@@ -178,7 +178,7 @@ MT2.mapDetail = function (code) {
     }
     if (tags.length) h += '<div class="mt-tags">' + tags.join('') + '</div>';
     var recent = valid.slice(-10).map(function (t) {
-      var col = !t.ok ? '#f0574a' : (MT2.tierOf(t.ms) || {}).color;
+      var col = !t.ok ? '#d93025' : (MT2.tierOf(t.ms) || {}).color;
       return '<i style="background:' + col + '" title="' + t.ms.toFixed(2) + 's' + (t.calib ? ' 校准' : '') + '"></i>';
     }).join('');
     if (recent) h += '<div class="mt-spark">最近：' + recent + '</div>';
@@ -270,7 +270,7 @@ MT2.renderRetentionCard = function () {
          '标称 24 小时但实际隔了 4 天的，会记到 3 天那一桶。</div>';
   }
   h += '<div class="mt-kpis">' + kpi('已测', st.tested) +
-       kpi('到期待测', st.dueItems, st.dueItems ? '#f0883e' : '') +
+       kpi('到期待测', st.dueItems, st.dueItems ? '#d0601a' : '') +
        kpi('排队中', st.pending) + '</div>';
   if (st.dueItems) {
     h += '<div class="mt-note">到期的会在下次训练开头优先补测（一轮最多 8 项）。' +

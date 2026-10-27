@@ -576,7 +576,7 @@ MT2.renderCurve = function (byLen) {
     var v = byLen[L];
     return '<div class="dm-curve-row"><span class="lab">' + L + ' 项</span>' +
            '<span class="track"><span class="fill" style="width:' + (v * 100) + '%;background:' +
-           (v >= thr ? '#3ddc84' : '#f0883e') + '"></span></span>' +
+           (v >= thr ? '#1e9e52' : '#d0601a') + '"></span></span>' +
            '<span class="val">' + Math.round(v * 100) + '%</span></div>';
   }).join('') + '</div>';
 };

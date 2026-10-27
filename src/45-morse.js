@@ -521,7 +521,7 @@ MZ.renderPanel = function () {
     return '<div class="mz-grp"><b>' + g.label + '</b> <span class="mz-letters">' + g.codes.join(' ') + '</span><br>' +
       '<span class="mt-sub">能正确 ' + p.correct + '/' + p.total + ' · 能快速 ' + p.fast + '/' + p.total +
       (p.median !== null ? ' · 中位 ' + p.median.toFixed(2) + 's' : '') +
-      (done ? ' · <span style="color:#3ddc84">✓ 可以加下一组</span>' : '') + '</span>' +
+      (done ? ' · <span style="color:#1e9e52">✓ 可以加下一组</span>' : '') + '</span>' +
       (MZ.aidLine(gi) ? '<br><span class="mz-aid">' + MZ.aidLine(gi) + '</span>' : '') + '</div>';
   }).join('');
 

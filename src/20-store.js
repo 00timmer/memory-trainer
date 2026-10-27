@@ -7,11 +7,11 @@ MT2.SCHEMA = 2;
 
 // 提取延迟分档（带渐近线：<0.8s 已接近简单反应时下限，不再要求更快）
 MT2.TIERS = [
-  { max: 0.80, key: 'auto',   label: '⚡自动', color: '#3ddc84' },
-  { max: 1.20, key: 'fast',   label: '快',     color: '#8bd450' },
-  { max: 2.00, key: 'fluent', label: '流畅',   color: '#e8c547' },
-  { max: 3.00, key: 'slow',   label: '慢',     color: '#f0883e' },
-  { max: 1e9,  key: 'stuck',  label: '卡壳',   color: '#f0574a' }
+  { max: 0.80, key: 'auto',   label: '⚡自动', color: '#1e9e52' },
+  { max: 1.20, key: 'fast',   label: '快',     color: '#5a9e1e' },
+  { max: 2.00, key: 'fluent', label: '流畅',   color: '#a06a00' },
+  { max: 3.00, key: 'slow',   label: '慢',     color: '#d0601a' },
+  { max: 1e9,  key: 'stuck',  label: '卡壳',   color: '#d93025' }
 ];
 MT2.tierOf = function (sec) {
   if (sec == null || !isFinite(sec)) return null;
