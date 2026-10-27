@@ -1293,6 +1293,24 @@
     assert(MZ.STORIES.Y.story.indexOf('特兰克斯') === -1, 'Y 的故事里出现了特兰克斯（= 12）');
   });
 
+  T('分组口诀：单词正好用完组内字母，顺序表从编码算出来', function () {
+    var sorted = function (x) { return x.replace(/[^A-Z]/g, '').split('').sort().join(''); };
+    eq(sorted('INMATE'), sorted(MZ.GROUPS[0].codes.join('')), '第一组单词');
+    eq(sorted('DUGWORKS'), sorted(MZ.GROUPS[1].codes.join('')), 'DUG WORKS');
+    eq(sorted('DUSKGROW'), sorted(MZ.GROUPS[1].codes.join('')), 'DUSK GROW');
+    // 口诀里的顺序要和真实编码排出来的表一致
+    [1, 2].forEach(function (gi) {
+      var grid = MZ.pegGrid(MZ.GROUPS[gi].codes);
+      var order = grid.map(function (r) {
+        return r.cells.map(function (c) { return c.letter; }).join('');
+      }).join(' · ');
+      eq(order, MZ.GROUP_AIDS[gi].order, '第' + (gi + 1) + '组口诀');
+    });
+    var g3 = MZ.pegGrid(MZ.GROUPS[2].codes), empty = [];
+    g3.forEach(function (r) { r.cells.forEach(function (c) { if (!c.letter) empty.push(r.pre + c.suf); }); });
+    eq(empty.join(), '1122,1212,2221,2222', '第三组空格');
+  });
+
   T('牌组注册：四组覆盖全部 36 个编码，答案同时给 1/2 和点划', function () {
     mzReset();
     var all = [];

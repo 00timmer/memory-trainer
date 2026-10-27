@@ -71,6 +71,47 @@ MZ.STORIES = {
   Z: { split: '22+11', peg: '兔子警官', story: '17、18 号和路飞闯进动物城，被兔子警官开罚单', orig: '17、18 号把路飞折成 Z' }
 };
 
+// 分组口诀：单词只帮记「哪些字母在这一组」；按前两位数字桩排的顺序才能直接推出编码
+MZ.PEG_NAMES = { '11': '路飞', '12': '特兰克斯', '21': '香蕉鳄鱼', '22': '17/18号' };
+MZ.GROUP_AIDS = [
+  { word: 'INMATE', order: 'E T · I A N M', note: 'E=1 T=2；I A N M = 11 12 21 22' },
+  { word: 'DUG WORKS / DUSK GROW', order: 'SU · RW · DK · GO', note: '每对前一个 +1，后一个 +2' },
+  { word: '', order: 'HVF · LPJ · BXCY · ZQ', note: '空格 1122 / 1212 / 2221 / 2222 没有英文字母' },
+  null
+];
+
+// 按「前两位数字桩 × 剩余部分」排成表；空格 = 该编码没有英文字母
+MZ.pegGrid = function (codes) {
+  var len = MZ.CODES[codes[0]].length;
+  if (len < 3) return null;
+  var sufs = len === 3 ? ['1', '2'] : ['11', '12', '21', '22'];
+  var byCode = {};
+  codes.forEach(function (c) { byCode[MZ.CODES[c]] = c; });
+  return ['11', '12', '21', '22'].map(function (pre) {
+    return { pre: pre, peg: MZ.PEG_NAMES[pre],
+             cells: sufs.map(function (suf) { return { suf: suf, letter: byCode[pre + suf] || '' }; }) };
+  });
+};
+
+MZ.gridHtml = function (codes) {
+  var g = MZ.pegGrid(codes);
+  if (!g) return '';
+  var h = '<table class="mz-grid"><tr><th>前两位</th>' +
+    g[0].cells.map(function (c) { return '<th>+' + c.suf + '</th>'; }).join('') + '</tr>';
+  g.forEach(function (row) {
+    h += '<tr><td class="mz-gp">' + row.pre + ' ' + row.peg + '</td>' + row.cells.map(function (c) {
+      return c.letter ? '<td class="mz-gl">' + c.letter + '</td>' : '<td class="mz-ge">—</td>';
+    }).join('') + '</tr>';
+  });
+  return h + '</table>';
+};
+
+MZ.aidLine = function (i) {
+  var a = MZ.GROUP_AIDS[i];
+  if (!a) return '';
+  return '口诀：<b>' + a.order + '</b>' + (a.word ? '（' + a.word + '）' : '');
+};
+
 MZ.DIGIT_RULE = '1–5 从左边逐个加短音；6–0 从左边逐个加长音';
 MZ.digitHint = function (d) {
   var n = parseInt(d, 10);
@@ -474,13 +515,14 @@ MZ.renderPanel = function () {
   else if (panel.parentNode !== modes) modes.insertBefore(panel, modes.firstChild);
   panel.style.display = '';
 
-  var rows = MZ.GROUPS.map(function (g) {
+  var rows = MZ.GROUPS.map(function (g, gi) {
     var p = MZ.groupProgress(g);
     var done = p.fast === p.total;
     return '<div class="mz-grp"><b>' + g.label + '</b> <span class="mz-letters">' + g.codes.join(' ') + '</span><br>' +
       '<span class="mt-sub">能正确 ' + p.correct + '/' + p.total + ' · 能快速 ' + p.fast + '/' + p.total +
       (p.median !== null ? ' · 中位 ' + p.median.toFixed(2) + 's' : '') +
-      (done ? ' · <span style="color:#3ddc84">✓ 可以加下一组</span>' : '') + '</span></div>';
+      (done ? ' · <span style="color:#3ddc84">✓ 可以加下一组</span>' : '') + '</span>' +
+      (MZ.aidLine(gi) ? '<br><span class="mz-aid">' + MZ.aidLine(gi) + '</span>' : '') + '</div>';
   }).join('');
 
   var wpm = MT2.cfg('morseWpm'), story = MT2.cfg('morseStory');
@@ -524,7 +566,13 @@ MZ.showStoryTable = function () {
     '三位编码：单个信号在开头说「先…」，在结尾说「最后…」。' +
     'Y 的字母桩特兰克斯和数字桩 12 撞了，Y 改落到「时间机器」。每条下面附原版。</div>';
   MZ.GROUPS.forEach(function (g) {
-    h += '<div class="mz-th">' + g.label + '</div><table>';
+    h += '<div class="mz-th">' + g.label + '</div>';
+    var aid = MZ.GROUP_AIDS[MZ.GROUPS.indexOf(g)];
+    if (aid) {
+      h += '<div class="mz-aidbox">' + (aid.word ? '单词：<b>' + aid.word + '</b>（记这一组有哪些字母）<br>' : '') +
+        '顺序：<b>' + aid.order + '</b> —— ' + aid.note + MZ.gridHtml(g.codes) + '</div>';
+    }
+    h += '<table>';
     g.codes.forEach(function (c) {
       var s = MZ.STORIES[c];
       h += '<tr><td class="mz-l">' + c + (s ? '<div class="mz-peg">' + s.peg + '</div>' : '') + '</td><td class="mz-c">' + MZ.CODES[c] + '<br><span>' +
