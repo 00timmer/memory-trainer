@@ -508,45 +508,69 @@ MZ.renderPanel = function () {
   MZ.seedRange();
   if (!panel) {
     panel = document.createElement('div');
-    panel.id = 'mz-panel'; panel.className = 'mt-card mz-panel';
+    panel.id = 'mz-panel'; panel.className = 'mz-panel';
   }
   var anchor = document.getElementById('mt-dm-entries');
   if (anchor) modes.insertBefore(panel, anchor.nextSibling);
   else if (panel.parentNode !== modes) modes.insertBefore(panel, modes.firstChild);
   panel.style.display = '';
 
-  var rows = MZ.GROUPS.map(function (g, gi) {
+  var icoN = 0;
+  var ico = function (txt) {
+    return '<div class="ui-ico" style="background:' + MT2.ICON_TINT[icoN++ % MT2.ICON_TINT.length] + '">' + txt + '</div>';
+  };
+  var row = function (icon, title, desc, onclick, right) {
+    return '<div class="ui-row' + (onclick ? ' ui-chev' : '') + '"' + (onclick ? ' onclick="' + onclick + '"' : '') + '>' +
+      ico(icon) + '<div class="ui-txt"><div class="ui-t">' + title + '</div>' +
+      (desc ? '<div class="ui-d">' + desc + '</div>' : '') + '</div>' + (right || '') + '</div>';
+  };
+
+  var prog = MZ.GROUPS.map(function (g, gi) {
     var p = MZ.groupProgress(g);
     var done = p.fast === p.total;
-    return '<div class="mz-grp"><b>' + g.label + '</b> <span class="mz-letters">' + g.codes.join(' ') + '</span><br>' +
-      '<span class="mt-sub">能正确 ' + p.correct + '/' + p.total + ' · 能快速 ' + p.fast + '/' + p.total +
+    var aid = MZ.GROUP_AIDS[gi];
+    var desc = '能正确 ' + p.correct + '/' + p.total + ' · 能快速 ' + p.fast + '/' + p.total +
       (p.median !== null ? ' · 中位 ' + p.median.toFixed(2) + 's' : '') +
-      (done ? ' · <span style="color:#1e9e52">✓ 可以加下一组</span>' : '') + '</span>' +
-      (MZ.aidLine(gi) ? '<br><span class="mz-aid">' + MZ.aidLine(gi) + '</span>' : '') + '</div>';
+      (aid ? '<br><span class="mz-aid">口诀 ' + aid.order + (aid.word ? '（' + aid.word + '）' : '') + '</span>' : '');
+    var badge = done ? '<span class="ui-badge ok">✓ 可加下一组</span>'
+                     : '<span class="ui-badge">' + p.fast + '/' + p.total + '</span>';
+    return row(gi < 3 ? String(gi + 1) : '#', g.label.split(' · ')[0].split('（')[0] + ' <span class="mz-letters">' + g.codes.join(' ') + '</span>',
+               desc, '', badge);
   }).join('');
 
+  icoN = 0;
+  var drills = [
+    ['A→', '字母 → 编码', '看字母，想出 1/2 编码', "openModeSettings('random')"],
+    ['→A', '编码 → 字母', '看编码，认出字母', "openModeSettings('reverse')"],
+    ['⏱', '1 秒冲刺', '限时识别，目标 < 0.8s', "openModeSettings('sprint')"],
+    ['🔊', '听音识字母', '听嘀嗒，延迟从播完开始算', "openModeSettings('morse-audio')"],
+    ['🔤', '单词解码（看）', '只用已加入范围的字母', "openModeSettings('morse-wdec')"],
+    ['👂', '单词解码（听）', '', "openModeSettings('morse-waud')"],
+    ['✏️', '单词编码', '看单词，写出每个字母的编码', "openModeSettings('morse-wenc')"],
+    ['📖', '编码故事表', '口诀表 + 26 个故事', 'MZ.showStoryTable()']
+  ].map(function (d) { return row(d[0], d[1], d[2], d[3]); }).join('');
+
+  icoN = 0;
   var wpm = MT2.cfg('morseWpm'), story = MT2.cfg('morseStory');
+  var wpmSel = '<select class="ui-select" onchange="MT2.setCfg(\'morseWpm\', parseInt(this.value,10))">' +
+    [10, 13, 15, 18, 20, 25].map(function (v) {
+      return '<option value="' + v + '"' + (v === wpm ? ' selected' : '') + '>' + v + ' WPM</option>';
+    }).join('') + '</select>';
+  var storySel = '<select class="ui-select" onchange="MT2.setCfg(\'morseStory\', this.value===\'1\'); MZ.renderPanel()">' +
+    '<option value="1"' + (story ? ' selected' : '') + '>总是显示</option>' +
+    '<option value="0"' + (!story ? ' selected' : '') + '>只在答错时</option></select>';
+
   panel.innerHTML =
-    '<div class="mt-card-h">📡 摩尔斯训练 <span class="mt-sub">1 = · 嘀　2 = — 嗒</span></div>' +
-    rows +
-    '<div class="mt-note">字母 → 编码：「随机闪卡」　编码 → 字母：「反向闪卡」　1 秒目标：「冲刺挑战」<br>' +
-    '在各模式的「选择编码范围」里一组一组加，组内全部「能快速」再加下一组。</div>' +
-    '<div class="mz-btns">' +
-      '<button class="mt-btn" onclick="openModeSettings(\'morse-audio\')">🔊 听音识字母</button>' +
-      '<button class="mt-btn" onclick="openModeSettings(\'morse-wdec\')">🔤 单词解码（看）</button>' +
-      '<button class="mt-btn" onclick="openModeSettings(\'morse-waud\')">👂 单词解码（听）</button>' +
-      '<button class="mt-btn" onclick="openModeSettings(\'morse-wenc\')">✏️ 单词编码</button>' +
-      '<button class="mt-btn" onclick="MZ.showStoryTable()">📖 故事表</button>' +
-    '</div>' +
-    '<label class="mt-setting">字符速度 <select onchange="MT2.setCfg(\'morseWpm\', parseInt(this.value,10))">' +
-      [10, 13, 15, 18, 20, 25].map(function (v) {
-        return '<option value="' + v + '"' + (v === wpm ? ' selected' : '') + '>' + v + ' WPM</option>';
-      }).join('') + '</select></label>' +
-    '<label class="mt-setting">答案下显示故事 <select onchange="MT2.setCfg(\'morseStory\', this.value===\'1\'); MZ.renderPanel()">' +
-      '<option value="1"' + (story ? ' selected' : '') + '>显示（学习期）</option>' +
-      '<option value="0"' + (!story ? ' selected' : '') + '>只在答错时显示</option></select></label>' +
-    '<div class="mt-note">听音的延迟从<b>播完</b>开始算。改了 WPM，前后的听音延迟就不能直接比。' +
-      '故事只是过渡：组内都「能快速」之后，把上面这项切成「只在答错时显示」。</div>';
+    '<div class="ui-sec-h">摩尔斯进度 <span class="ui-sec-sub">1 = · 嘀　2 = — 嗒</span></div>' +
+    '<div class="ui-group">' + prog + '</div>' +
+    '<div class="ui-foot">在各练习的「选择编码范围」里一组一组加，组内全部「能快速」再加下一组。</div>' +
+    '<div class="ui-sec-h">摩尔斯练习</div>' +
+    '<div class="ui-group">' + drills + '</div>' +
+    '<div class="ui-sec-h">摩尔斯设置</div>' +
+    '<div class="ui-group">' +
+      row('♪', '字符速度', '改了速度，前后的听音延迟不能直接比', '', wpmSel) +
+      row('💬', '答案下显示故事', '学习期总是显示；组内都「能快速」后改成只在答错时', '', storySel) +
+    '</div>';
 };
 
 var _mzOrigHomeUI = updateHomeUI;

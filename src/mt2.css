@@ -173,3 +173,67 @@
 .mz-gp { text-align: left; color: #5a6170; white-space: nowrap; }
 .mz-gl { font-size: 18px; font-weight: 700; color: #1a73e8; }
 .mz-ge { color: #a0a6b0; }
+
+/* ============================================================
+   分组列表版式（Windows 11 设置 / Outlook / iOS 设置）
+   页面浅灰底；一个小节 = 框外标题 + 一个带边框的白色面板；面板里是行
+   ============================================================ */
+body { background: #f3f4f6; color: #111827; }
+.header, .deck-tabs { background: #ffffff; border-bottom: 1px solid #e5e7eb; }
+.home { padding: 16px 16px 40px; }
+
+.ui-sec-h { font-size: 14px; font-weight: 600; color: #111827; margin: 26px 4px 8px; letter-spacing: 0;
+  text-transform: none; }
+.ui-sec-sub { font-weight: 400; color: #6b7280; margin-left: 8px; }
+.ui-sec-fold { cursor: pointer; user-select: none; }
+.ui-sec-fold:hover { color: #1a73e8; }
+.ui-foot { font-size: 12px; color: #6b7280; margin: 8px 6px 0; line-height: 1.6; }
+
+.ui-group { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, .04); margin: 0; }
+.ui-row { display: flex; align-items: center; gap: 12px; padding: 12px 14px; min-height: 56px;
+  position: relative; background: #ffffff; border: 0; border-radius: 0; margin: 0; text-align: left; }
+.ui-row + .ui-row::before { content: ''; position: absolute; top: 0; left: 58px; right: 0; border-top: 1px solid #eef0f3; }
+.ui-row.ui-chev { cursor: pointer; }
+.ui-row.ui-chev:hover { background: #f7f9fc; }
+.ui-row.ui-chev:active { background: #eef2f7; }
+.ui-row.ui-chev::after { content: '›'; color: #b6bcc6; font-size: 22px; line-height: 1; margin-left: 4px; flex-shrink: 0; }
+.ui-ico { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center;
+  font-size: 16px; font-weight: 700; color: #1f2937; flex-shrink: 0; background: #e8f0fe; }
+.ui-txt { flex: 1; min-width: 0; }
+.ui-t, .ui-row .mode-name, .ui-row .t { font-size: 15px; font-weight: 500; color: #111827; }
+.ui-d, .ui-row .mode-desc, .ui-row .d { font-size: 12.5px; color: #6b7280; margin-top: 2px; line-height: 1.5; }
+.ui-badge { flex-shrink: 0; font-size: 12px; color: #4b5563; background: #f3f4f6; border-radius: 10px; padding: 3px 9px; }
+.ui-badge.ok { color: #1e7b3e; background: #e6f4ea; }
+.ui-select { flex-shrink: 0; max-width: 46%; background: #f9fafb; border: 1px solid #d1d5db; border-radius: 6px;
+  padding: 6px 8px; font-size: 13px; color: #111827; font-family: inherit; }
+
+/* 旧组件套进分组列表后的修正 */
+.mode-grid.ui-group { display: block; gap: 0; }
+.mode-btn.ui-row { justify-content: flex-start; transition: background .15s; }
+.mode-btn.ui-row:hover { border-color: transparent; }
+.mode-btn .mode-icon.ui-ico { font-size: 16px; }
+.dm-entry.ui-row { margin: 0; border-radius: 0; padding: 12px 14px; }
+.dm-entry.ui-row.disabled { opacity: 1; }
+.dm-entry.ui-row.disabled .ui-ico, .dm-entry.ui-row.disabled .ui-txt { opacity: .5; }
+#mt-dm-entries.ui-group { margin: 0; }
+#streak-bar { display: none !important; }
+
+/* 统计：一个面板四格，格间竖线 */
+.stats-bar.ui-group { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; margin-bottom: 0; }
+.stats-bar .stat-card { background: transparent; border-radius: 0; padding: 14px 4px; }
+.stats-bar .stat-card + .stat-card { border-left: 1px solid #eef0f3; }
+.stats-bar .stat-card .value { font-size: 24px; color: #111827; }
+.stats-bar .stat-card .label { color: #6b7280; }
+.stats-bar #streak-count { color: #e67e22; }
+
+/* 今日训练：唯一的彩色主卡 */
+.mt-today { margin: 16px 0 0; border-radius: 12px; box-shadow: 0 2px 8px rgba(29, 95, 209, .25); }
+
+/* 摩尔斯面板 */
+.mz-panel { margin: 0; }
+.mz-panel .mz-letters { font-weight: 400; color: #1a73e8; letter-spacing: 1px; margin-left: 4px; }
+.mz-panel .mz-aid { color: #9a6700; }
+
+/* 其他页面的卡片也加边框，和底色分开 */
+.mt-card, .stats-section { border: 1px solid #e5e7eb; box-shadow: 0 1px 2px rgba(16, 24, 40, .04); }

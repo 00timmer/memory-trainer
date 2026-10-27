@@ -129,6 +129,8 @@ updateHomeUI = function () {
       ? '上次 ' + new Date(last.ts).toISOString().slice(0, 10) + '：容量 ' + last.capacityText
       : '还没跑过 —— 没有基线就没有对照起点';
   }
+  MT2.layoutHome();
+  if (window.MZ) MZ.renderPanel();   // 版式整理后再放摩尔斯面板，保证位置稳定
 };
 
 // 结束页：补充本轮的新口径指标

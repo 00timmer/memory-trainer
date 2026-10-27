@@ -437,6 +437,70 @@ body { font-family: -apple-system, 'PingFang SC', sans-serif; background: #f5f6f
 .mz-gl { font-size: 18px; font-weight: 700; color: #1a73e8; }
 .mz-ge { color: #a0a6b0; }
 
+/* ============================================================
+   分组列表版式（Windows 11 设置 / Outlook / iOS 设置）
+   页面浅灰底；一个小节 = 框外标题 + 一个带边框的白色面板；面板里是行
+   ============================================================ */
+body { background: #f3f4f6; color: #111827; }
+.header, .deck-tabs { background: #ffffff; border-bottom: 1px solid #e5e7eb; }
+.home { padding: 16px 16px 40px; }
+
+.ui-sec-h { font-size: 14px; font-weight: 600; color: #111827; margin: 26px 4px 8px; letter-spacing: 0;
+  text-transform: none; }
+.ui-sec-sub { font-weight: 400; color: #6b7280; margin-left: 8px; }
+.ui-sec-fold { cursor: pointer; user-select: none; }
+.ui-sec-fold:hover { color: #1a73e8; }
+.ui-foot { font-size: 12px; color: #6b7280; margin: 8px 6px 0; line-height: 1.6; }
+
+.ui-group { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, .04); margin: 0; }
+.ui-row { display: flex; align-items: center; gap: 12px; padding: 12px 14px; min-height: 56px;
+  position: relative; background: #ffffff; border: 0; border-radius: 0; margin: 0; text-align: left; }
+.ui-row + .ui-row::before { content: ''; position: absolute; top: 0; left: 58px; right: 0; border-top: 1px solid #eef0f3; }
+.ui-row.ui-chev { cursor: pointer; }
+.ui-row.ui-chev:hover { background: #f7f9fc; }
+.ui-row.ui-chev:active { background: #eef2f7; }
+.ui-row.ui-chev::after { content: '›'; color: #b6bcc6; font-size: 22px; line-height: 1; margin-left: 4px; flex-shrink: 0; }
+.ui-ico { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center;
+  font-size: 16px; font-weight: 700; color: #1f2937; flex-shrink: 0; background: #e8f0fe; }
+.ui-txt { flex: 1; min-width: 0; }
+.ui-t, .ui-row .mode-name, .ui-row .t { font-size: 15px; font-weight: 500; color: #111827; }
+.ui-d, .ui-row .mode-desc, .ui-row .d { font-size: 12.5px; color: #6b7280; margin-top: 2px; line-height: 1.5; }
+.ui-badge { flex-shrink: 0; font-size: 12px; color: #4b5563; background: #f3f4f6; border-radius: 10px; padding: 3px 9px; }
+.ui-badge.ok { color: #1e7b3e; background: #e6f4ea; }
+.ui-select { flex-shrink: 0; max-width: 46%; background: #f9fafb; border: 1px solid #d1d5db; border-radius: 6px;
+  padding: 6px 8px; font-size: 13px; color: #111827; font-family: inherit; }
+
+/* 旧组件套进分组列表后的修正 */
+.mode-grid.ui-group { display: block; gap: 0; }
+.mode-btn.ui-row { justify-content: flex-start; transition: background .15s; }
+.mode-btn.ui-row:hover { border-color: transparent; }
+.mode-btn .mode-icon.ui-ico { font-size: 16px; }
+.dm-entry.ui-row { margin: 0; border-radius: 0; padding: 12px 14px; }
+.dm-entry.ui-row.disabled { opacity: 1; }
+.dm-entry.ui-row.disabled .ui-ico, .dm-entry.ui-row.disabled .ui-txt { opacity: .5; }
+#mt-dm-entries.ui-group { margin: 0; }
+#streak-bar { display: none !important; }
+
+/* 统计：一个面板四格，格间竖线 */
+.stats-bar.ui-group { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; margin-bottom: 0; }
+.stats-bar .stat-card { background: transparent; border-radius: 0; padding: 14px 4px; }
+.stats-bar .stat-card + .stat-card { border-left: 1px solid #eef0f3; }
+.stats-bar .stat-card .value { font-size: 24px; color: #111827; }
+.stats-bar .stat-card .label { color: #6b7280; }
+.stats-bar #streak-count { color: #e67e22; }
+
+/* 今日训练：唯一的彩色主卡 */
+.mt-today { margin: 16px 0 0; border-radius: 12px; box-shadow: 0 2px 8px rgba(29, 95, 209, .25); }
+
+/* 摩尔斯面板 */
+.mz-panel { margin: 0; }
+.mz-panel .mz-letters { font-weight: 400; color: #1a73e8; letter-spacing: 1px; margin-left: 4px; }
+.mz-panel .mz-aid { color: #9a6700; }
+
+/* 其他页面的卡片也加边框，和底色分开 */
+.mt-card, .stats-section { border: 1px solid #e5e7eb; box-shadow: 0 1px 2px rgba(16, 24, 40, .04); }
+
 </style>
 </head>
 <body>
@@ -4967,45 +5031,69 @@ MZ.renderPanel = function () {
   MZ.seedRange();
   if (!panel) {
     panel = document.createElement('div');
-    panel.id = 'mz-panel'; panel.className = 'mt-card mz-panel';
+    panel.id = 'mz-panel'; panel.className = 'mz-panel';
   }
   var anchor = document.getElementById('mt-dm-entries');
   if (anchor) modes.insertBefore(panel, anchor.nextSibling);
   else if (panel.parentNode !== modes) modes.insertBefore(panel, modes.firstChild);
   panel.style.display = '';
 
-  var rows = MZ.GROUPS.map(function (g, gi) {
+  var icoN = 0;
+  var ico = function (txt) {
+    return '<div class="ui-ico" style="background:' + MT2.ICON_TINT[icoN++ % MT2.ICON_TINT.length] + '">' + txt + '</div>';
+  };
+  var row = function (icon, title, desc, onclick, right) {
+    return '<div class="ui-row' + (onclick ? ' ui-chev' : '') + '"' + (onclick ? ' onclick="' + onclick + '"' : '') + '>' +
+      ico(icon) + '<div class="ui-txt"><div class="ui-t">' + title + '</div>' +
+      (desc ? '<div class="ui-d">' + desc + '</div>' : '') + '</div>' + (right || '') + '</div>';
+  };
+
+  var prog = MZ.GROUPS.map(function (g, gi) {
     var p = MZ.groupProgress(g);
     var done = p.fast === p.total;
-    return '<div class="mz-grp"><b>' + g.label + '</b> <span class="mz-letters">' + g.codes.join(' ') + '</span><br>' +
-      '<span class="mt-sub">能正确 ' + p.correct + '/' + p.total + ' · 能快速 ' + p.fast + '/' + p.total +
+    var aid = MZ.GROUP_AIDS[gi];
+    var desc = '能正确 ' + p.correct + '/' + p.total + ' · 能快速 ' + p.fast + '/' + p.total +
       (p.median !== null ? ' · 中位 ' + p.median.toFixed(2) + 's' : '') +
-      (done ? ' · <span style="color:#1e9e52">✓ 可以加下一组</span>' : '') + '</span>' +
-      (MZ.aidLine(gi) ? '<br><span class="mz-aid">' + MZ.aidLine(gi) + '</span>' : '') + '</div>';
+      (aid ? '<br><span class="mz-aid">口诀 ' + aid.order + (aid.word ? '（' + aid.word + '）' : '') + '</span>' : '');
+    var badge = done ? '<span class="ui-badge ok">✓ 可加下一组</span>'
+                     : '<span class="ui-badge">' + p.fast + '/' + p.total + '</span>';
+    return row(gi < 3 ? String(gi + 1) : '#', g.label.split(' · ')[0].split('（')[0] + ' <span class="mz-letters">' + g.codes.join(' ') + '</span>',
+               desc, '', badge);
   }).join('');
 
+  icoN = 0;
+  var drills = [
+    ['A→', '字母 → 编码', '看字母，想出 1/2 编码', "openModeSettings('random')"],
+    ['→A', '编码 → 字母', '看编码，认出字母', "openModeSettings('reverse')"],
+    ['⏱', '1 秒冲刺', '限时识别，目标 < 0.8s', "openModeSettings('sprint')"],
+    ['🔊', '听音识字母', '听嘀嗒，延迟从播完开始算', "openModeSettings('morse-audio')"],
+    ['🔤', '单词解码（看）', '只用已加入范围的字母', "openModeSettings('morse-wdec')"],
+    ['👂', '单词解码（听）', '', "openModeSettings('morse-waud')"],
+    ['✏️', '单词编码', '看单词，写出每个字母的编码', "openModeSettings('morse-wenc')"],
+    ['📖', '编码故事表', '口诀表 + 26 个故事', 'MZ.showStoryTable()']
+  ].map(function (d) { return row(d[0], d[1], d[2], d[3]); }).join('');
+
+  icoN = 0;
   var wpm = MT2.cfg('morseWpm'), story = MT2.cfg('morseStory');
+  var wpmSel = '<select class="ui-select" onchange="MT2.setCfg(\'morseWpm\', parseInt(this.value,10))">' +
+    [10, 13, 15, 18, 20, 25].map(function (v) {
+      return '<option value="' + v + '"' + (v === wpm ? ' selected' : '') + '>' + v + ' WPM</option>';
+    }).join('') + '</select>';
+  var storySel = '<select class="ui-select" onchange="MT2.setCfg(\'morseStory\', this.value===\'1\'); MZ.renderPanel()">' +
+    '<option value="1"' + (story ? ' selected' : '') + '>总是显示</option>' +
+    '<option value="0"' + (!story ? ' selected' : '') + '>只在答错时</option></select>';
+
   panel.innerHTML =
-    '<div class="mt-card-h">📡 摩尔斯训练 <span class="mt-sub">1 = · 嘀　2 = — 嗒</span></div>' +
-    rows +
-    '<div class="mt-note">字母 → 编码：「随机闪卡」　编码 → 字母：「反向闪卡」　1 秒目标：「冲刺挑战」<br>' +
-    '在各模式的「选择编码范围」里一组一组加，组内全部「能快速」再加下一组。</div>' +
-    '<div class="mz-btns">' +
-      '<button class="mt-btn" onclick="openModeSettings(\'morse-audio\')">🔊 听音识字母</button>' +
-      '<button class="mt-btn" onclick="openModeSettings(\'morse-wdec\')">🔤 单词解码（看）</button>' +
-      '<button class="mt-btn" onclick="openModeSettings(\'morse-waud\')">👂 单词解码（听）</button>' +
-      '<button class="mt-btn" onclick="openModeSettings(\'morse-wenc\')">✏️ 单词编码</button>' +
-      '<button class="mt-btn" onclick="MZ.showStoryTable()">📖 故事表</button>' +
-    '</div>' +
-    '<label class="mt-setting">字符速度 <select onchange="MT2.setCfg(\'morseWpm\', parseInt(this.value,10))">' +
-      [10, 13, 15, 18, 20, 25].map(function (v) {
-        return '<option value="' + v + '"' + (v === wpm ? ' selected' : '') + '>' + v + ' WPM</option>';
-      }).join('') + '</select></label>' +
-    '<label class="mt-setting">答案下显示故事 <select onchange="MT2.setCfg(\'morseStory\', this.value===\'1\'); MZ.renderPanel()">' +
-      '<option value="1"' + (story ? ' selected' : '') + '>显示（学习期）</option>' +
-      '<option value="0"' + (!story ? ' selected' : '') + '>只在答错时显示</option></select></label>' +
-    '<div class="mt-note">听音的延迟从<b>播完</b>开始算。改了 WPM，前后的听音延迟就不能直接比。' +
-      '故事只是过渡：组内都「能快速」之后，把上面这项切成「只在答错时显示」。</div>';
+    '<div class="ui-sec-h">摩尔斯进度 <span class="ui-sec-sub">1 = · 嘀　2 = — 嗒</span></div>' +
+    '<div class="ui-group">' + prog + '</div>' +
+    '<div class="ui-foot">在各练习的「选择编码范围」里一组一组加，组内全部「能快速」再加下一组。</div>' +
+    '<div class="ui-sec-h">摩尔斯练习</div>' +
+    '<div class="ui-group">' + drills + '</div>' +
+    '<div class="ui-sec-h">摩尔斯设置</div>' +
+    '<div class="ui-group">' +
+      row('♪', '字符速度', '改了速度，前后的听音延迟不能直接比', '', wpmSel) +
+      row('💬', '答案下显示故事', '学习期总是显示；组内都「能快速」后改成只在答错时', '', storySel) +
+    '</div>';
 };
 
 var _mzOrigHomeUI = updateHomeUI;
@@ -5617,6 +5705,88 @@ MT2.renderRetentionCard = function () {
 
 MT2.showDash = function () { showScreen('mt-dash'); MT2.renderDashboard(); };
 
+/* ==== 85-home-layout.js ==== */
+// ============================================================
+// 首页版式：分组列表（参考 Windows 11 设置 / Outlook / iOS 设置）
+// - 小节标题在框外，一个小节只有一个白色面板
+// - 面板里每一项是一行：图标块 + 标题/说明 + ›，行与行之间一条细分隔线
+// - 统计数字和连续天数合成一条
+// 只调整 DOM 位置和 class，不改各入口的点击行为。
+// ============================================================
+MT2.ICON_TINT = ['#e8f0fe', '#e6f4ea', '#fef3e2', '#fce8e6', '#f3e8fd', '#e0f7fa'];
+
+MT2.tintIcon = function (el, i) {
+  el.style.background = MT2.ICON_TINT[i % MT2.ICON_TINT.length];
+};
+
+MT2.layoutHome = function () {
+  var home = document.getElementById('screen-home');
+  if (!home) return;
+
+  // 1) 统计条：今日练习 / 正确率 / 弱项 / 连续天数 —— 一个面板四格
+  var bar = home.querySelector('.stats-bar');
+  if (bar && !bar.getAttribute('data-ui')) {
+    bar.setAttribute('data-ui', '1');
+    bar.classList.add('ui-group');
+    var sc = document.getElementById('streak-count');
+    if (sc) {
+      var cell = document.createElement('div');
+      cell.className = 'stat-card';
+      sc.classList.add('value');
+      cell.appendChild(sc);
+      var l = document.createElement('div');
+      l.className = 'label'; l.textContent = '连续天数 🔥';
+      cell.appendChild(l);
+      bar.appendChild(cell);
+    }
+    var sb = document.getElementById('streak-bar');
+    if (sb) sb.style.display = 'none';
+  }
+
+  // 2) 直接记忆：标题移出框外，入口变成行
+  var dm = document.getElementById('mt-dm-entries');
+  if (dm && !dm.getAttribute('data-ui')) {
+    dm.setAttribute('data-ui', '1');
+    var h = dm.querySelector('.mt-fold-h');
+    if (h) { h.className = 'ui-sec-h'; h.textContent = '直接记忆'; dm.parentNode.insertBefore(h, dm); }
+    dm.classList.add('ui-group');
+    Array.prototype.forEach.call(dm.querySelectorAll('.dm-entry'), function (e, i) {
+      var t = e.querySelector('.t'), d = e.querySelector('.d');
+      var m = t.textContent.match(/^(\S+)\s+(.*)$/);
+      var ico = document.createElement('div');
+      ico.className = 'ui-ico'; MT2.tintIcon(ico, i);
+      ico.textContent = m ? m[1] : '•';
+      if (m) t.textContent = m[2];
+      var txt = document.createElement('div');
+      txt.className = 'ui-txt';
+      txt.appendChild(t); if (d) txt.appendChild(d);
+      e.insertBefore(ico, e.firstChild);
+      e.appendChild(txt);
+      e.classList.add('ui-row', 'ui-chev');
+    });
+  }
+
+  // 3) 原有模式列表：图标放左边，行式
+  Array.prototype.forEach.call(home.querySelectorAll('.mode-grid'), function (g) {
+    if (g.getAttribute('data-ui')) return;
+    g.setAttribute('data-ui', '1');
+    g.classList.add('ui-group');
+    Array.prototype.forEach.call(g.querySelectorAll('.mode-btn'), function (b, i) {
+      b.classList.add('ui-row', 'ui-chev');
+      var ico = b.querySelector('.mode-icon');
+      if (ico) { ico.classList.add('ui-ico'); MT2.tintIcon(ico, i); b.insertBefore(ico, b.firstChild); }
+      var txt = ico ? ico.nextElementSibling : null;
+      if (txt) txt.classList.add('ui-txt');
+    });
+  });
+  Array.prototype.forEach.call(home.querySelectorAll('.section-title'), function (t) {
+    t.classList.add('ui-sec-h');
+    if (!t.textContent.trim()) t.style.display = 'none';
+  });
+  var fold = document.getElementById('mt-fold-head');
+  if (fold) fold.classList.add('ui-sec-h', 'ui-sec-fold');
+};
+
 /* ==== 90-init.js ==== */
 // ============================================================
 // 接线：新屏幕路由 / 首页改版 / 初始化
@@ -5749,6 +5919,8 @@ updateHomeUI = function () {
       ? '上次 ' + new Date(last.ts).toISOString().slice(0, 10) + '：容量 ' + last.capacityText
       : '还没跑过 —— 没有基线就没有对照起点';
   }
+  MT2.layoutHome();
+  if (window.MZ) MZ.renderPanel();   // 版式整理后再放摩尔斯面板，保证位置稳定
 };
 
 // 结束页：补充本轮的新口径指标
