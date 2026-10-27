@@ -423,7 +423,8 @@ body { font-family: -apple-system, 'PingFang SC', sans-serif; background: #0f0f1
 .mz-table table { width: 100%; border-collapse: collapse; font-size: 14px; }
 .mz-table td { padding: 6px 4px; border-bottom: 1px solid #2a2a4a; vertical-align: top; }
 .mz-th { margin: 14px 0 4px; font-weight: 700; color: #4a9eff; }
-.mz-l { font-size: 20px; font-weight: 700; width: 32px; }
+.mz-l { font-size: 20px; font-weight: 700; width: 56px; }
+.mz-peg { font-size: 11px; font-weight: 400; color: #e8c547; }
 .mz-c { font-family: ui-monospace, monospace; width: 70px; }
 .mz-c span { color: #888; }
 
@@ -4477,44 +4478,47 @@ MZ.GROUPS = [
   { label: '数字 0–9（规律，不编故事）', codes: '1234567890'.split('') }
 ];
 
-// 拆分 + 故事。revised = 为了消除歧义改过的版本（原版保留在 orig）。
-// 三位编码的统一约定：单个信号在开头就说「先…」，在结尾就说「最后…」，
-// 这样 W(1+22) / G(22+1)、D(2+11) / U(11+2) 这类镜像对不会讲成同一句话。
+// 拆分 + 故事。统一句式：数字桩按编码顺序出场 → 最后落到这个字母自己的字母桩（A 牛顿、B 熊…）。
+// 三位编码里单个信号：在开头说「先…」，在结尾说「最后…」，镜像对（W/G、D/U）就不会讲成同一句话。
+// 例外：Y 的字母桩是特兰克斯，和数字桩 12 撞了 —— 用它会让 2122 被误还原出一个 12，所以 Y 落到「时间机器」。
+// orig = 用户 prompt 里的原版故事，故事表里附在下面。
 MZ.STORIES = {
-  E: { split: '1', story: 'E 发出一声短嘀' },
-  T: { split: '2', story: 'T 发出一声长嗒' },
-  I: { split: '11', story: '路飞站直变成 I' },
-  A: { split: '12', story: '特兰克斯举着 A' },
-  N: { split: '21', story: '香蕉鳄鱼咬断 N' },
-  M: { split: '22', story: '17 号和 18 号举起 M' },
-  S: { split: '1+11', story: '先一道短闪光，照亮路飞胸前的 S',
-       orig: '短闪光照到路飞胸前的 S', revised: true },
-  U: { split: '11+2', story: '路飞先出场，最后甩出一道长闪电，弯成 U',
-       orig: '路飞拉出长闪电，弯成 U', revised: true },
-  R: { split: '12+1', story: '特兰克斯先出场，最后按一下短闪按钮，弹出 R',
-       orig: '特兰克斯按一次短闪按钮，出现 R', revised: true },
-  W: { split: '1+22', story: '先亮一道短闪光，照出 17、18 号并肩站成 W',
-       orig: '短闪光照亮 17、18 号的 W', revised: true },
-  D: { split: '2+11', story: '先劈下一道长闪电，劈中路飞，路飞摔成 D',
-       orig: '长闪电劈中路飞的 D', revised: true },
-  K: { split: '2+12', story: '先劈下一道长闪电，特兰克斯举剑格挡成 K',
-       orig: '长闪电劈中特兰克斯的 K', revised: true },
-  G: { split: '22+1', story: '17、18 号先出场，最后被一道短闪光打出 G 的钩',
-       orig: '17、18 号被短闪光照亮，出现 G', revised: true },
-  O: { split: '22+2', story: '17、18 号先出场，最后射出一道长光柱绕成 O',
-       orig: '17、18 号发出一道长闪光，形成 O', revised: true },
-  B: { split: '21+11', story: '香蕉鳄鱼咬住路飞的 B 帽' },
-  C: { split: '21+21', story: '两条香蕉鳄鱼首尾相咬围成 C' },
-  F: { split: '11+21', story: '路飞骑香蕉鳄鱼挥舞 F 旗' },
-  H: { split: '11+11', story: '两个路飞手拉手变成 H' },
-  J: { split: '12+22', story: '特兰克斯和 17、18 号钓出 J' },
-  L: { split: '12+11', story: '特兰克斯把路飞折成 L' },
-  P: { split: '12+21', story: '特兰克斯骑香蕉鳄鱼举 P' },
-  Q: { split: '22+12', story: '17、18 号追着特兰克斯抢 Q' },
-  V: { split: '11+12', story: '路飞与特兰克斯举起 V' },
-  X: { split: '21+12', story: '香蕉鳄鱼和特兰克斯交叉成 X' },
-  Y: { split: '21+22', story: '香蕉鳄鱼撞上 17、18 号，撞出 Y' },
-  Z: { split: '22+11', story: '17、18 号把路飞折成 Z' }
+  E: { split: '1', peg: '蛋蛋男爵', story: '「嘀」一声短响，吵醒了蛋蛋男爵', orig: 'E 发出一声短嘀' },
+  T: { split: '2', peg: '腾虎', story: '「嗒——」一声长鸣，惊动了腾虎', orig: 'T 发出一声长嗒' },
+  I: { split: '11', peg: '青雉', story: '路飞一拳打碎青雉的冰', orig: '路飞站直变成 I' },
+  A: { split: '12', peg: '牛顿', story: '特兰克斯一剑劈开苹果，砸中牛顿', orig: '特兰克斯举着 A' },
+  N: { split: '21', peg: '甘福尔', story: '香蕉鳄鱼一口咬住甘福尔', orig: '香蕉鳄鱼咬断 N' },
+  M: { split: '22', peg: '孙悟空', story: '17、18 号和孙悟空打成一团', orig: '17 号和 18 号举起 M' },
+  S: { split: '1+11', peg: '张伟', story: '先一道短闪光，路飞被晃了眼，撞上律师张伟',
+       orig: '短闪光照到路飞胸前的 S' },
+  U: { split: '11+2', peg: '辉夜', story: '路飞先出场，最后一道长闪电劈开辉夜的竹子',
+       orig: '路飞拉出长闪电，弯成 U' },
+  R: { split: '12+1', peg: '巨石强森', story: '特兰克斯先出场，最后一道短闪光照在巨石强森的肌肉上',
+       orig: '特兰克斯按一次短闪按钮，出现 R' },
+  W: { split: '1+22', peg: '二代火影', story: '先亮一道短闪光，17、18 号围攻二代火影',
+       orig: '短闪光照亮 17、18 号的 W' },
+  D: { split: '2+11', peg: '乔兹', story: '先劈下一道长闪电，路飞撞碎乔兹的钻石身体',
+       orig: '长闪电劈中路飞的 D' },
+  K: { split: '2+12', peg: '烬', story: '先劈下一道长闪电，特兰克斯跳上烬的翼龙背',
+       orig: '长闪电劈中特兰克斯的 K' },
+  G: { split: '22+1', peg: '卡库', story: '17、18 号先出场，最后一道短闪光照向卡库的长脖子',
+       orig: '17、18 号被短闪光照亮，出现 G' },
+  O: { split: '22+2', peg: '娜美', story: '17、18 号先出场，最后一道长闪电从娜美的天候棒里劈出',
+       orig: '17、18 号发出一道长闪光，形成 O' },
+  B: { split: '21+11', peg: '熊', story: '香蕉鳄鱼咬住路飞，熊冲过来抢蜂蜜', orig: '香蕉鳄鱼咬住路飞的 B 帽' },
+  C: { split: '21+21', peg: '比鲁斯', story: '一条香蕉鳄鱼咬着另一条香蕉鳄鱼的尾巴，围住比鲁斯',
+       orig: '两条香蕉鳄鱼围成 C' },
+  F: { split: '11+21', peg: '鸣人', story: '路飞骑着香蕉鳄鱼去追鸣人', orig: '路飞骑香蕉鳄鱼挥舞 F 旗' },
+  H: { split: '11+11', peg: '星矢', story: '路飞和路飞的分身一左一右，把星矢扶上天马', orig: '两个路飞手拉手变成 H' },
+  J: { split: '12+22', peg: '林俊杰', story: '特兰克斯和 17、18 号在 KTV 抢林俊杰的麦', orig: '特兰克斯和 17、18 号钓出 J' },
+  L: { split: '12+11', peg: '辛巴', story: '特兰克斯和路飞一起骑上辛巴', orig: '特兰克斯把路飞折成 L' },
+  P: { split: '12+21', peg: '乌龙', story: '特兰克斯骑着香蕉鳄鱼追乌龙', orig: '特兰克斯骑香蕉鳄鱼举 P' },
+  Q: { split: '22+12', peg: '奎因', story: '17、18 号追着特兰克斯，撞上恐龙奎因', orig: '17、18 号追着特兰克斯抢 Q' },
+  V: { split: '11+12', peg: '蔬菜人', story: '路飞和特兰克斯把蔬菜人打到自爆', orig: '路飞与特兰克斯举起 V' },
+  X: { split: '21+12', peg: '雏田', story: '香蕉鳄鱼和特兰克斯被雏田的白眼看穿', orig: '香蕉鳄鱼和特兰克斯交叉成 X' },
+  Y: { split: '21+22', peg: '时间机器', story: '香蕉鳄鱼撞上 17、18 号，一起被吸进时间机器',
+       orig: '香蕉鳄鱼撞上 17、18 号，撞出 Y' },
+  Z: { split: '22+11', peg: '兔子警官', story: '17、18 号和路飞闯进动物城，被兔子警官开罚单', orig: '17、18 号把路飞折成 Z' }
 };
 
 MZ.DIGIT_RULE = '1–5 从左边逐个加短音；6–0 从左边逐个加长音';
@@ -4966,14 +4970,16 @@ MZ.showStoryTable = function () {
   }
   var h = '<div class="modal mz-table"><h3>📖 编码故事表</h3>' +
     '<div class="mt-note">11 路飞 · 12 特兰克斯 · 21 香蕉鳄鱼 · 22 17/18 号。四位一律 2+2 拆。' +
-    '三位编码：单个信号在开头说「先…」，在结尾说「最后…」。标 ✎ 的是为了区分镜像对改过的版本，下面附原版。</div>';
+    '数字桩按编码顺序出场，最后落到字母自己的字母桩（A 牛顿、B 熊…）。' +
+    '三位编码：单个信号在开头说「先…」，在结尾说「最后…」。' +
+    'Y 的字母桩特兰克斯和数字桩 12 撞了，Y 改落到「时间机器」。每条下面附原版。</div>';
   MZ.GROUPS.forEach(function (g) {
     h += '<div class="mz-th">' + g.label + '</div><table>';
     g.codes.forEach(function (c) {
       var s = MZ.STORIES[c];
-      h += '<tr><td class="mz-l">' + c + '</td><td class="mz-c">' + MZ.CODES[c] + '<br><span>' +
+      h += '<tr><td class="mz-l">' + c + (s ? '<div class="mz-peg">' + s.peg + '</div>' : '') + '</td><td class="mz-c">' + MZ.CODES[c] + '<br><span>' +
         MZ.dots(MZ.CODES[c]) + '</span></td><td>' +
-        (s ? (s.revised ? '✎ ' : '') + s.story + (s.split.length > 2 ? '<span class="mt-sub">（' + s.split + '）</span>' : '') +
+        (s ? s.story + (s.split.length > 2 ? '<span class="mt-sub">（' + s.split + '）</span>' : '') +
              (s.orig ? '<div class="mt-sub">原版：' + s.orig + '</div>' : '')
            : MZ.digitHint(c)) +
         '</td></tr>';

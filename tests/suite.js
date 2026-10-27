@@ -1270,6 +1270,29 @@
     });
   });
 
+  T('每个故事：数字桩按编码顺序出场，最后落到字母桩', function () {
+    var PEG = { '11': '路飞', '12': '特兰克斯', '21': '香蕉鳄鱼', '22': '17、18 号', '1': '短', '2': '长' };
+    Object.keys(MZ.STORIES).forEach(function (k) {
+      var st = MZ.STORIES[k], pos = -1;
+      st.split.split('+').forEach(function (chunk) {
+        var i = st.story.indexOf(PEG[chunk], pos + 1);
+        assert(i > pos, k + '：' + PEG[chunk] + ' 没有按顺序出现在「' + st.story + '」');
+        pos = i;
+      });
+      var j = st.story.lastIndexOf(st.peg);
+      assert(j > pos, k + '：字母桩 ' + st.peg + ' 不在数字桩之后');
+    });
+  });
+
+  T('字母桩取自字母编码牌组；Y 避开和数字桩 12 相撞的特兰克斯', function () {
+    Object.keys(MZ.STORIES).forEach(function (k) {
+      if (k === 'Y') return;
+      eq(MZ.STORIES[k].peg, LZ.ITEMS[k][0], k);
+    });
+    eq(LZ.ITEMS.Y[0], '特兰克斯');
+    assert(MZ.STORIES.Y.story.indexOf('特兰克斯') === -1, 'Y 的故事里出现了特兰克斯（= 12）');
+  });
+
   T('牌组注册：四组覆盖全部 36 个编码，答案同时给 1/2 和点划', function () {
     mzReset();
     var all = [];
