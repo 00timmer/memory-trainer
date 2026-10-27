@@ -1503,6 +1503,13 @@
     assert(!st || st.style.display === 'none', '0-99 数字牌组也显示了提示');
   });
 
+  T('自动化地图按 00、01 … 99 的顺序排，不按对象键顺序', function () {
+    reset(); currentMode = 'random';
+    MT2.renderMap();
+    var cells = [].map.call(document.querySelectorAll('#mt-map-body .mt-cell .c'), function (e) { return e.textContent; });
+    eq(cells[0], '00'); eq(cells[9], '09'); eq(cells[10], '10'); eq(cells[99], '99');
+  });
+
   // ==========================================================
   G('顶部牌组下拉');
 

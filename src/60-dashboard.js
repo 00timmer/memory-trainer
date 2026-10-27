@@ -131,19 +131,29 @@ function kpi(label, val, color) {
 // ------------------------------------------------------------
 MT2.showMap = function () { showScreen('mt-map'); MT2.renderMap(); };
 
+// 按牌组分组顺序排（Object.keys 会把 "10" 这类整数键排到 "00" 前面）
+MT2.orderedCodes = function (codes) {
+  var out = [];
+  getCodeGroups().forEach(function (g) {
+    g.codes.forEach(function (c) { if (codes.indexOf(c) !== -1 && out.indexOf(c) === -1) out.push(c); });
+  });
+  codes.forEach(function (c) { if (out.indexOf(c) === -1) out.push(c); });
+  return out;
+};
+
 MT2.renderMap = function () {
-  var codes = getFilteredCodes(), deckId = currentDeckId;
+  var codes = MT2.orderedCodes(getFilteredCodes()), deckId = currentDeckId;
   var el = document.getElementById('mt-map-body');
   var h = '<div class="mt-maplegend">';
   MT2.TIERS.forEach(function (t) { h += '<span><i style="background:' + t.color + '"></i>' + t.label + '</span>'; });
-  h += '<span><i style="background:#cfd4dc"></i>未测</span></div><div class="mt-grid">';
+  h += '<span><i style="background:#eef0f3;border:1px solid #d1d5db"></i>未测</span></div><div class="mt-grid">';
   codes.forEach(function (c) {
     var r = MT2.recRO(deckId, c, 'fwd');
     var tier = (r && r.median !== null) ? MT2.tierOf(r.median) : null;
-    var bg = tier ? tier.color : '#cfd4dc';
+    var bg = tier ? tier.color : '#eef0f3';
     var w = MT2.weakRO(deckId, c, 'fwd');
     var mark = w.recall.active ? '✗' : w.speed.active ? '🐢' : '';
-    h += '<div class="mt-cell" style="background:' + bg + '" onclick="MT2.mapDetail(\'' +
+    h += '<div class="mt-cell' + (tier ? ' tested' : '') + '" style="background:' + bg + '" onclick="MT2.mapDetail(\'' +
          String(c).replace(/'/g, "\\'") + '\')"><span class="c">' + formatCode(c) + '</span>' +
          '<span class="m">' + mark + '</span></div>';
   });
